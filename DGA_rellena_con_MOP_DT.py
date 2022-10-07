@@ -3,31 +3,11 @@
 """
 
 import pandas as pd
-import geopandas as gpd
 import os
-import datetime
-import calendar
-import datetime
-import time
-import re
-import calendar
-from functools import reduce
-import gc
 import numpy as np
 import pathlib
 
 #%% define funciones
-def dms2dd(degrees, minutes, seconds, direction):
-    dd = float(degrees) + float(minutes)/60 + float(seconds)/(60*60);
-    if direction == 'E' or direction == 'S':
-        dd *= -1
-    return dd;
-
-def parse_dms(dms):
-    parts = re.split('[^\d\w]+', dms)
-    lat = dms2dd(parts[0], parts[1], parts[2], parts[3])
-    return -(lat)
-
 def merge_dfs(df1,df2):
     min_date=min(df1.index[0],df2.index[0])
     max_date=max(df1.index[-1],df2.index[-1])
