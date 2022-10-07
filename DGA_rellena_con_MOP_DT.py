@@ -105,19 +105,9 @@ for fn in list_arc_est:
         #q_DGAyMOP = q_DGA.copy()
     
     q_DGAyMOP = merge_dfs(q_DGA,q_MOP.reindex(columns=est)) # reemplaza valores NaN de los registros DGA con valores no NaN de los registros MOP correspondientes al dia y agrega estaciones faltantes 
-    #q_temp = q_MOP.reindex(columns=est) # se extraen solo las columnas de los registros MOP en base a los RUT de las estaciones DGA, incluyendo FALTANTES       
-    #q_temp = q_MOP.reindex(columns=q_DGAyMOP.columns) # se extraen solo las columnas de los registros MOP en base a los RUT de las estaciones DGA, incluyendo FALTANTES
-    #q_DGAyMOP = q_DGAyMOP.combine_first(q_temp) # reemplaza valores NaN de los registros DGA con valores no NaN de los registros MOP correspondientes al dia
-    
-    f_DGAyMOP = merge_dfs(f_DGA,f_MOP.reindex(columns=est))
-    # f_temp = f_MOP.reindex(index = f_DGA.index,columns=q_DGAyMOP.columns) # se extraen solo las columnas de los registros MOP en base a los RUT de las estaciones DGA, incluyendo FALTANTES
-    # aux = (q_DGAyMOP != q_DGA.reindex(columns=q_DGAyMOP.columns))&f_temp.notnull() # indices de q_DGAyMOP donde el valor es distindo a q_DGA, o sea, donde se agrego registro MOP
-    # f_DGAyMOP = f_DGA.reindex(columns=q_DGAyMOP.columns) # flags de registros rellenados con MOP
-    
-    # for col in f_DGAyMOP.columns:
-    #     f_col = f_temp[col][aux[col]]
-    #     f_DGAyMOP.loc[f_col.index,col] = f_temp.loc[f_col.index, col]
-       
+
+    f_DGAyMOP = merge_dfs(f_DGA,f_MOP.reindex(columns=est)) # agrega flags de los registros MOP correspondientes
+
     parent, name = fn.parent, fn.name # obtiene carpeta y nombre de archivo de registros DGA
     proc_fn = name.replace('CaudalesDGA_', 'CaudalesDGAyMOP_') # crea nombre de archivo de registros de estaciones completadas con MOP
     fn_DGAyMOP = pathlib.Path(parent).joinpath(proc_fn) # crea ruta de archivo
@@ -130,5 +120,3 @@ for fn in list_arc_est:
     # Close the Pandas Excel writer and output the Excel file.
     writer.save()
     writer.close()
-
-
