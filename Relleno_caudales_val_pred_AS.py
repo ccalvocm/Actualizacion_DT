@@ -322,7 +322,7 @@ os.path.join('..', 'SIG', 'SHACS',
     minYr = 4
 
     # rango de fechas de las nuevas normales
-    date_start=pd.to_datetime(str(1952)+'-04-01')
+    date_start=pd.to_datetime(str(1950)+'-04-01')
     date_end=pd.to_datetime(str(datetime.date.today().year)+'-03-31')
     
     # rutas
