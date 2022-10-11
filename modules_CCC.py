@@ -286,6 +286,9 @@ def CVE_1979_2019(file, fig, axes, ene, flag):
 
 def CVE_mon(Q_relleno,fig,axes,ene,year_i,year_f,cuenca):
     
+  def most_common(lst):
+    return max(set(lst), key=lst.count)
+    
   import locale
     # Set to Spanish locale to get comma decimal separater
   locale.setlocale(locale.LC_NUMERIC, "es_ES")
@@ -295,8 +298,7 @@ def CVE_mon(Q_relleno,fig,axes,ene,year_i,year_f,cuenca):
 
   # probabilidades de excedencia y distribuciones
   probabilidades_excedencia=[.2,.5,.85,.9,.95]
-  distr=[st.norm,st.lognorm,st.gumbel_l,st.gumbel_r,st.pearson3,'logpearson3']   
-    
+  distr=[st.norm,st.lognorm,st.gumbel_l,st.gumbel_r,st.pearson3,'logpearson3']  
   
   ini = pd.to_datetime(str(year_i)+'-04-01',format='%Y-%m-%d')
   fin = pd.to_datetime(str(year_f)+'-03-31',format='%Y-%m-%d')
@@ -318,17 +320,40 @@ def CVE_mon(Q_relleno,fig,axes,ene,year_i,year_f,cuenca):
 
     # iterar sobre estaciones
   for i,estacion in enumerate(Q_relleno.columns):
-                        
+
     df_q=pd.DataFrame(Q_relleno[estacion],columns=[estacion],
                       index=Q_relleno.index)
     distrs,CVE_rellenada=freqAnalysis.CVE_pdf(df_q,probabilidades_excedencia,
                                               distr)
+    # anuales
+    df_q_yr=df_q[:]
+    df_q_yr=df_q_yr.groupby(df_q_yr.index.map(lambda x: agnohidrologico(int(x.year),int(x.month)))).mean()
+    distr2,CVE=freqAnalysis.CVE_pdf_yr(df_q_yr,probabilidades_excedencia,
+                                              distr)
     
-    # QAQC de los ajustes
-    diferencia=CVE_rellenada.diff(axis=1).iloc[:,1:]
+    # promedio_remporadas
+    # abril-sepriembte
+    df_as=df_q[df_q.index.month.isin(list(range(4,10)))]
+    df_as_yr=df_as.groupby(df_as.index.map(lambda x: agnohidrologico(int(x.year),int(x.month)))).mean()
+    distr3,CVE=freqAnalysis.CVE_pdf_yr(df_as_yr,probabilidades_excedencia,
+                                              distr)
     
-    print(distrs)
- 
+    # oct-mar
+    df_om=df_q[df_q.index.month.isin([10,11,12,1,2,3])]
+    df_om_yr=df_om.groupby(df_om.index.map(lambda x: agnohidrologico(int(x.year),int(x.month)))).mean()
+    distr4,CVE=freqAnalysis.CVE_pdf_yr(df_om_yr,probabilidades_excedencia,
+                                              distr)
+    # distribucion adoptada
+    dist_adopt=most_common(distrs+distr2+distr3+distr4)
+    print(dist_adopt)
+    if dist_adopt=='logpearson3':
+        distrs,CVE_rellenada=freqAnalysis.CVE_pdf(df_q,probabilidades_excedencia,
+                                                  ['logpearson3'])
+    else:
+        distrs,CVE_rellenada=freqAnalysis.CVE_pdf(df_q,probabilidades_excedencia,
+                                                  [getattr(st, dist_adopt)])
+
+    
     pbb_mensuales.loc[pbb_mensuales.index,probabilidades_excedencia]=CVE_rellenada.values
     
     caudales_pbb_mes[estacion] = pbb_mensuales

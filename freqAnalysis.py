@@ -190,3 +190,84 @@ def CVE_pdf(df_relleno, pbbs, distr):
         distr = distr_backup.copy()
 
     return best_dist_list, cve_pdf
+
+def CVE_pdf_yr(df_relleno, pbbs, distr):
+    '''
+
+    Parameters
+    ----------
+    df_relleno : DataFrame
+        caudales rellenados
+    pbb : List
+        Probabilidades de excedencia.
+    distr : st 
+        Funciones de distribucion de probabilidad.
+
+    Returns
+    -------
+    best_fit_name : string
+        Nombre de la distribucion de probabilidad ajustada.
+    cve_pdf : DataFrame
+        Curva de variación estacional usando la distribución de probabilidad ajustada.
+
+    '''
+
+    # -------------------------------------------------------------------------
+    # distribuciones
+    # -------------------------------------------------------------------------
+    distr_backup = distr.copy()
+    best_dist_list = []
+
+    # bins según Gabriel Castro, Uch.
+    bins = 200
+
+    # iniciarlizar df y recorrer meses
+    cve_pdf = pd.DataFrame(
+        [], index=[0], columns=pbbs)
+
+    data = pd.DataFrame(
+        df_relleno.values.ravel())
+    best_fit_name, best_fit_params = best_fit_distribution(
+        data, bins, distr)
+
+    # Separate parts of parameters
+    arg=best_fit_params[:-2]
+    loc=best_fit_params[-2]
+    scale=best_fit_params[-1]
+
+    # aca se calcularse todas las pbb y no iterar
+    
+    if best_fit_name == 'logpearson3':
+        best_dist = getattr(st, 'pearson3')
+        func=lambda x: np.exp(best_dist.ppf(1-x,loc=loc,scale=scale,*arg))
+    else:
+        best_dist = getattr(st, best_fit_name)
+        func=lambda x:best_dist.ppf(1-x,*best_fit_params)
+    cve_pdf.loc[0]=cve_pdf.columns.to_series().apply(func)
+
+    distr_corr=distr.copy()
+
+    while (cve_pdf.loc[0].min()<0) | (any(cve_pdf.loc[0].diff()>0)):
+                    
+        if best_fit_name=='logpearson3':
+            distr_corr.remove('logpearson3')
+        else:
+            distr_corr.remove(best_dist)
+            
+        best_fit_name, best_fit_params=best_fit_distribution(data, bins,
+                                                               distr_corr)
+                        
+        if best_fit_name == 'logpearson3':
+            best_dist = getattr(st, 'pearson3')
+            func=lambda x:np.exp(best_dist.ppf(1-x,loc=loc,scale=scale,*arg))
+        else:
+            best_dist = getattr(st, best_fit_name)
+            func=lambda x:best_dist.ppf(1-x,*best_fit_params)
+        
+        cve_pdf.loc[0]=cve_pdf.columns.to_series().apply(func)
+
+    best_dist_list.append(best_fit_name)
+
+    distr = distr_backup.copy()
+
+    return best_dist_list, cve_pdf
