@@ -362,7 +362,7 @@ os.path.join('..', 'SIG', 'SHACS',
     
     # calcular el digito verificador
     camels.index=parse_digito_verificador(camels.index)
-    camels=filter_stations(camels,['03','04','05'])
+    camels=filter_stations(camels,['03','04','05']) # region de atacama, coquimbo, valparaiso
     
     # atributos fisicos
     camels_fisico=parse_att_fisicos(camels)
@@ -523,8 +523,8 @@ os.path.join('..', 'SIG', 'SHACS',
                 q_mon_MLR.loc[Q_monthly_MLR_mes.index,
                               col]=Q_monthly_MLR_mes[col].values
                 df_check=q_mon_MLR[estaciones].copy()
-#%% guardar registros de estaciones rellenadas
-q_mon
+#%% guardar registros de estaciones rellenadas en pickle
+    q_mon_MLR.to_pickle(pathlib.PurePath(root,'..','Scripts','outputs','dataframes','qmon_MLR_Coq_1950_2022.pkl'))
 
                 
 #%% plots para presentación
