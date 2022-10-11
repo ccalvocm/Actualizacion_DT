@@ -1,10 +1,5 @@
 # -*- coding: utf-8 -*-
 """
-Spyder Editor
-
-This is a temporary script file.
-
-Author: CCCM
 
 """
 
@@ -202,7 +197,7 @@ def day_to_mon(df_day,flags_DGA):
     
     return df_filter_mon
     
-def filter_outliers(serie,df_completo,flag=True):
+def filter_outliers(serie,df_completo,flag=False):
     # filtrar flags DGA      
     rut=serie.name
     df_est_completo=pd.DataFrame(df_completo[rut]).copy()
@@ -211,7 +206,7 @@ def filter_outliers(serie,df_completo,flag=True):
         df_mon=df_est_completo[df_est_completo.index.month==mes]
         
         # calcular el indice de los outliers
-        outliers=np.abs(df_mon-df_mon.mean())/df_mon.std()>30.
+        outliers=np.abs(df_mon-df_mon.mean())/df_mon.std()>3.
         
         # definir outliers dentro de los flags de la DGA que se removerán
         idx = serie.index.intersection(outliers.index)
@@ -239,8 +234,8 @@ def merge_columns(df):
     df_merged=pd.DataFrame(index=pd.date_range(df.index.min(),
 df.index.max(),freq='1d'),columns=[df.columns[0]])
     
-    for col in reversed(range(len(df.columns)-1)): # itera sobre indices de columnas en vez de nombres porque cuando los nombres de columnas son iguales no funciona
-        columna=df.iloc[:,col][df.iloc[:,col].notna()]
+    for col in list(reversed(df.columns)):
+        columna=df[col][df[col].notna()]
         df_merged.loc[columna.index,df_merged.columns[0]]=columna.values
     return df_merged
 
@@ -258,7 +253,7 @@ def dd2dms(deg):
     return [d, m, sd]
 
 def parse_dms(dms):
-    if not isinstance(dms, (int, float)):
+    if not isinstance(dms, float):
         parts = re.split('[^\d\w]+', dms)
         lat = dms2dd(parts[0], parts[1], parts[2], parts[3])
     else:
@@ -313,10 +308,7 @@ os.path.join('..', 'SIG', 'SHACS',
     Caudales medios mensuales rellenados y extendidos.
 
     """
-
-
-
-#%%    
+#%% Mínimo de años y Ventana temporal de análisis   
 
     #minimo de años con datos, Quevedo et al. (2021)
     minYr = 4
@@ -324,35 +316,36 @@ os.path.join('..', 'SIG', 'SHACS',
     # rango de fechas de las nuevas normales
     date_start=pd.to_datetime(str(1952)+'-04-01')
     date_end=pd.to_datetime(str(datetime.date.today().year)+'-03-31')
-    
+#%% Rutas de archivos    
     # rutas
-    root='.'
-    ruta_Archivos=join_path(root,'..','Antecedentes','Caudales')
+    root=pathlib.PurePath()
+    ruta_Archivos=pathlib.PurePath(root,'..','Antecedentes','Caudales')
     list_arc_est = []
-
+    
+    # lista de rutas de archivos de caudales
     for path, subdirs, files in os.walk(ruta_Archivos):
         for name in files:
             if name.startswith("CaudalesDGAyMOP_"): list_arc_est.append(pathlib.PurePath(path, name))
     
-    # ruta de archivos con registros previos a 1972 (revB)
-    ruta_Q_0_dga=[x for x in list_arc_est if 'Atacama' in x.name and x.name.endswith('revB.xlsx')][0]
-    ruta_Q_1_dga=[x for x in list_arc_est if 'Coquimbo' in x.name and x.name.endswith('revB.xlsx')][0]
-    ruta_Q_2_dga=[x for x in list_arc_est if 'Valpara' in x.name and x.name.endswith('revB.xlsx')][0]
+    # rutas de regiones para el analisis
+    ruta_Q_0_dga=[x for x in list_arc_est if 'Atacama' in x.__str__()][0]
+    ruta_Q_1_dga=[x for x in list_arc_est if 'Coquimbo' in x.__str__()][0]
+    ruta_Q_2_dga=[x for x in list_arc_est if 'Valpara' in x.__str__()][0]
 
-    # region y shacs
+    # rutas de shapes de region y shacs
     ruta_reg=os.path.join('..','SIG','Base','REGIONES_2020.shp')
     path_shac = os.path.join('..', 'SIG', 'SHACS','Acuiferos_SHAC_Julio_2022.shp')   
-    
+
+#%% Abrir informacion georeferenciada      
     shacs=gpd.read_file(path_shac)
     reg=gpd.read_file(ruta_reg)
     reg=reg[reg['REGION']=='Coquimbo']
     
-    # unir region Nuble y shacs
+    # overlay de shacs y region
     reg.set_crs(epsg='5360',inplace=True)
     reg.to_crs(epsg='32719',inplace=True)
-    shacs_inter=gpd.overlay(shacs, gpd.GeoDataFrame([],
-                                                    geometry=reg.buffer(1e3)))
-    #%%
+    shacs_inter=gpd.overlay(shacs, gpd.GeoDataFrame([],geometry=reg.buffer(1e3))) 
+    
     shacs_reg=shacs[shacs['OBJECTID_1'].isin(shacs_inter['OBJECTID_1'])]
     
     # leer dataset CAMELS
@@ -362,7 +355,7 @@ os.path.join('..', 'SIG', 'SHACS',
     
     # calcular el digito verificador
     camels.index=parse_digito_verificador(camels.index)
-    camels=filter_stations(camels,['03','04','05'])
+    camels=filter_stations(camels)
     
     # atributos fisicos
     camels_fisico=parse_att_fisicos(camels)
@@ -378,6 +371,7 @@ os.path.join('..', 'SIG', 'SHACS',
                                                            axis=0)
     camels_fisic_norm=camels_fisic_norm.apply(lambda x: x/x.max(),axis=0)
     
+#%% Cargar informacion de caudales y filtrar
     # leer caudales
     # dga
     q_day_0_dga=pd.read_excel(ruta_Q_0_dga,sheet_name='Datos',index_col=0,
@@ -387,13 +381,13 @@ os.path.join('..', 'SIG', 'SHACS',
     q_day_2_dga=pd.read_excel(ruta_Q_2_dga,sheet_name='Datos',index_col=0,
                               parse_dates=True,skiprows=[1])
     
-    # merge region 1, region 2 y region 3
+    # merge region 1 region 2 y region 3
     q_day=pd.concat([q_day_0_dga,q_day_1_dga,q_day_2_dga])
 
     #filtrar estaciones que sean canales, vertederos, desagues
     names_blacklist=['canal','desague','vertedero','dren']
     
-    # leer metadata dga de region 1, region 2 y region 3
+    # leer metadata dga de Region 1, 2 y 3
     metadata_0_dga=pd.read_excel(ruta_Q_0_dga,sheet_name='Ficha_est',index_col=0)
     metadata_0_dga[['Lon','Lat']]=metadata_0_dga[['Lon','Lat']].applymap(lambda x:parse_dms(x))
     metadata_1_dga=pd.read_excel(ruta_Q_1_dga,sheet_name='Ficha_est',index_col=0)
@@ -403,19 +397,11 @@ os.path.join('..', 'SIG', 'SHACS',
     
     # merge metadata    
     metadata=pd.concat([metadata_0_dga,metadata_1_dga,metadata_2_dga],ignore_index=True)
+    # remove duplicates
+    metadata.drop_duplicates(subset='rut',inplace=True)
     
     blacklist=metadata['Estacion'].str.lower().str.contains('|'.join(names_blacklist))
     metadata=metadata[~blacklist]
-    
-    # leer y combinar informacion de estaciones duplicadas
-    dupls=metadata['rut'][metadata['rut'].duplicated()]
-    
-    for dupl in dupls:
-        rut_dupl=metadata['rut'][metadata['rut']==dupl]
-        q_day[rut_dupl.iloc[0]]=merge_columns(q_day[rut_dupl])
-        del q_day[rut_dupl.iloc[-1]]
-    
-    metadata.drop_duplicates(subset='rut') #eliminar estaciones duplicadas
     
     # gdf de metadata
     gdf_metadata=gpd.GeoDataFrame(metadata,
@@ -426,11 +412,18 @@ os.path.join('..', 'SIG', 'SHACS',
     # estaciones en shacs
     est_utm_shac=gpd.overlay(gdf_metadata,shacs_reg)
     
+    # leer y completar estaciones duplicadas
+    dupls=metadata['Estacion'][metadata['Estacion'].duplicated()]
+    
+    for dupl in dupls:
+        rut_dupl=metadata['rut'][metadata['Estacion']==dupl]
+        q_day[rut_dupl.iloc[0]]=merge_columns(q_day[rut_dupl])
+        del q_day[rut_dupl.iloc[-1]]
+    
     # filtrar los caudales segun fechas a rellenar
     q_day=q_day.loc[(q_day.index<=date_end) & (q_day.index>=date_start)]
-
+    
     # leer flags 
-    # maule
     flag_DGA_0=pd.read_excel(ruta_Q_0_dga,sheet_name='Flags',index_col=0,
                               parse_dates=True,skiprows=[1])
     flag_DGA_1=pd.read_excel(ruta_Q_1_dga,sheet_name='Flags',index_col=0,
@@ -450,13 +443,12 @@ os.path.join('..', 'SIG', 'SHACS',
     # caudales de rios, esteros, quebradas, etc.
     qmon_white=q_mon.columns[q_mon.columns.isin(metadata[~blacklist]['rut'])]
     qmon=q_mon[qmon_white]    
-  #%Crear indice de fechas, convertir años a int y calcular frecuencia de datos
-
+  
+    #Crear indice de fechas, convertir años a int y calcular frecuencia de datos
     # seleccionar estaciones con un minimo de 20 years (Quevedo, 2021)
     estaciones_min=min_years(qmon,minYr)
     qmon_filtradas=qmon.copy()[estaciones_min.index]
-
-    #%% Relleno
+#%% Relleno de Registros de Estaciones
     
     # inicializacion de variables
     n_multivariables=4 # 4 estaciones de relleno Quevedo, 2021
@@ -479,7 +471,7 @@ os.path.join('..', 'SIG', 'SHACS',
     
     while df_check.isnull().values.any():
         for col in estaciones:
-            # print('Rellenando estación '+str(col),metadata[metadata['rut']==col]['Estacion'].iloc[0])
+            print('Rellenando estación '+str(col),metadata[metadata['rut']==col]['Estacion'].iloc[0])
                         
             for mes in meses:
                 q_mon_mes=qmon_filtradas.loc[qmon_filtradas.index.month==mes].copy()
@@ -515,7 +507,7 @@ os.path.join('..', 'SIG', 'SHACS',
                 max_value_=x.mean()+stdOutliers*x.std()
                 
                 imp=IterativeImputer(imputation_order='ascending',random_state=0,
-            max_iter=10,min_value=0,max_value=max_value_,sample_posterior=True)
+            max_iter=50,min_value=0,max_value=max_value_,sample_posterior=True)
                 Y=imp.fit_transform(x)
                 Q_monthly_MLR_mes=pd.DataFrame(Y,columns=x.columns,index=x.index)
                 Q_monthly_MLR_mes=Q_monthly_MLR_mes.dropna()
@@ -523,44 +515,9 @@ os.path.join('..', 'SIG', 'SHACS',
                 q_mon_MLR.loc[Q_monthly_MLR_mes.index,
                               col]=Q_monthly_MLR_mes[col].values
                 df_check=q_mon_MLR[estaciones].copy()
-#%% guardar registros de estaciones rellenadas
-q_mon
-
                 
 #%% plots para presentación
-    # q_mon_MLR=q_mon_MLR.loc[q_mon_MLR.index>='1982-03-31']
-    # qmon_filtradas=qmon_filtradas.loc[qmon_filtradas.index>='1982-03-31']   
-    lista_limari = ['04532001-4', '04534001-5', '04533002-8', '04520001-9', '04522001-K', '04530001-3', 
-                    '04531001-9', '04531002-7', '04514001-6', '04515002-K', '04535002-9', '04535003-7',
-                    '04537001-1', '04506002-0', '04506003-9', '04550003-9', '04540003-4', '04501001-5',
-                    '04501002-3', '04502001-0', '04503001-6', '04516001-7', '04523001-5', '04522002-8',
-                    '04523002-3', '04540001-8', '04556001-5', '04557002-9', '04558001-6', '04511002-8',
-                    '04512001-5', '04513001-0']
-    lista_limari=[x for x in lista_limari if x not in ['04535003-7', '04506003-9', '04540003-4']]
-    n=int(np.sqrt(len(lista_limari)))+1
-    fig,axes=plt.subplots(1)
-    axes=q_mon_MLR[lista_limari].plot(subplots=True,layout=(n,n),rot=90,color='b')
-    plt.subplots_adjust(left=0.1,
-                    bottom=0.1, 
-                    right=0.9, 
-                    top=0.9, 
-                    wspace=0.37, 
-                    hspace=0.27)
-    axes=axes.reshape(-1)
-    for i,a in enumerate(axes):
-        if i < len(lista_limari):
-            qmon_filtradas[lista_limari[i]].plot(ax=a,rot=90,color='r')
-            a.legend(loc='best', prop={'size': 7})
-            a.set_ylim(bottom=0)
-            a.set_ylabel('$\overline{Q}$mensual ($m^3/s$)', fontsize=9)
-            a.set_ylabel('$\overline{Q}$mensual ($m^3/s$)', fontsize=9)
-            a.set_title(gdf_metadata.Estacion[gdf_metadata.rut == lista_limari[i]].iloc[0], fontsize=9)
-            # a.set_xlim(['1982-04-01','2022-04-01'])
-            a.tick_params(axis='y', which='major', labelsize=9)
-            a.get_legend().remove()
-#%% plots para presentación
-    # qmon_filtradas=qmon_filtradas.loc[qmon_filtradas.index>='1982-04-01']
-    plt.close('all')
+    qmon_filtradas=qmon_filtradas.loc[qmon_filtradas.index>='1982-04-01']
     q_mon_MLR=q_mon_MLR.loc[q_mon_MLR.index>='1982-04-01']
     lista_limari=['04532001-4', '04534001-5', '04533002-8', '04520001-9', 
 '04522001-K', '04530001-3','04531001-9', '04531002-7', '04514001-6', '04515002-K', 
@@ -572,39 +529,18 @@ q_mon
                                                        '04540003-4']]
     n=int(np.sqrt(len(lista_limari)))+1
     fig,axes=plt.subplots(1)
-    axes=q_mon_MLR[lista_limari].resample('Y').mean().plot(subplots=True,layout=(n,n),rot=45,color='b',
-                                      legend=False)
+    axes=q_mon_MLR[lista_limari].plot(subplots=True,layout=(n,n),rot=45,color='b')
     plt.subplots_adjust(left=0.1,bottom=0.1,right=0.9,top=0.9,wspace=0.37, 
                     hspace=0.12)
     axes=axes.reshape(-1)
-    for i,a in enumerate(axes[:-2]):
-        try:
-            qmon_filtradas[lista_limari[i]].resample('Y').mean().plot(ax=a,rot=45,color='r',legend=False)
-            # a.legend(loc='best', prop={'size': 7})
-            a.set_ylim(bottom=0)
-            a.set_ylabel('$\overline{Q}$mensual ($m^3/s$)', fontsize=9)
-            a.tick_params(axis='y', which='major', labelsize=9)
-            a.set_title(gdf_metadata.Estacion[gdf_metadata.rut == lista_limari[i]].iloc[0], fontsize=9)
-            a.set_xlim(['1982-04-01','2022-03-31'])
-        except IndexError as e:
-            print(str(e)+'not found')
-            
-
     for i,a in enumerate(axes):
+        qmon_filtradas[lista_limari[i]].plot(ax=a,rot=45,color='r')
+        a.legend(loc='best', prop={'size': 7})
         a.set_ylim(bottom=0)
-        if i<int(np.sqrt(len(lista_limari)))*(int(np.sqrt(len(lista_limari)))-1):
-            pass
-            # a.set_xticks([])
-        if i%6!=0:
-            a.set_ylabel('')
-        
-    plt.subplots_adjust(left=0.1,bottom=0.1, 
-                right=0.9, 
-                top=0.9, 
-                wspace=0.14, 
-                hspace=0.24)
-
-    plt.savefig(os.path.join('.','outputs','q_mean_yr_complete.png'),
+        a.set_ylabel('$\overline{Q}$mensual ($m^3/s$)', fontsize=9)
+        a.tick_params(axis='y', which='major', labelsize=9)
+    #%%
+    plt.savefig(os.path.join('.','outputs','caudales_completos_1982.png'),
                 bbox_inches='tight')
         
     #%% Guardar
@@ -619,3 +555,7 @@ q_mon
     writer.save()
     writer.close()
         
+if __name__=='__main__':
+    region='Coquimbo'
+    main(region)
+    

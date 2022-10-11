@@ -31,20 +31,21 @@ def runoff(cuenca):
     # graciar hidrogramas
     caudales_nam=modules_CCC.get_names(caudales,metadata_cuenca[['Estacion',
                                                                'rut']])
-        
+    caudales_nam=caudales_nam.loc[caudales_nam.index>='1982-04-01']
     for i in range(4,len(caudales_nam.columns)+4,4):
-        # caudales medios anuales
-        modules_CCC.CMA(caudales_nam.iloc[:,i-2:i], 10 ,22, 2, 1)
+        # # caudales medios anuales
+        # modules_CCC.CMA(caudales_nam.iloc[:,i-2:i], 10 ,22, 2, 1, cuenca)
+        # plt.show()
         
-        # # curvas de duración de caudales
-        fig, axes=plt.subplots(2,2,figsize=(10, 22))
-        modules_CCC.CDQ(caudales_nam.iloc[:,i-4:i], 4, fig,  axes)
+        # # # curvas de duración de caudales
+        # fig, axes=plt.subplots(2,2,figsize=(10, 22))
+        # modules_CCC.CDQ(caudales_nam.iloc[:,i-4:i], 4, fig,  axes)
         
         # # curvas de variación estacional
         fig, axes=plt.subplots(2,2,figsize=(11, 17))
         axes=axes.reshape(-1)
         modules_CCC.CVE_mon(caudales_nam.iloc[:,i-4:i],fig,axes,4, 
-caudales_nam.index.year[0],caudales_nam.index.year[-1])
+caudales_nam.index.year[0],caudales_nam.index.year[-1],cuenca)
 
         # anomalias
         fig, axes=plt.subplots(2,2,figsize=(10, 22))

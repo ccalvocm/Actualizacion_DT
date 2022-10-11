@@ -284,7 +284,7 @@ def CVE_1979_2019(file, fig, axes, ene, flag):
 
 # ------------------------------------------------------------------------------------------------
 
-def CVE_mon(Q_relleno,fig,axes,ene,year_i,year_f):
+def CVE_mon(Q_relleno,fig,axes,ene,year_i,year_f,cuenca):
     
   import locale
     # Set to Spanish locale to get comma decimal separater
@@ -294,7 +294,7 @@ def CVE_mon(Q_relleno,fig,axes,ene,year_i,year_f):
   import freqAnalysis
 
   # probabilidades de excedencia y distribuciones
-  probabilidades_excedencia=[.05,.1,.2,.5,.85,.95]
+  probabilidades_excedencia=[.2,.5,.85,.9,.95]
   distr=[st.norm,st.lognorm,st.gumbel_l,st.gumbel_r,st.pearson3,'logpearson3']   
     
   
@@ -313,7 +313,7 @@ def CVE_mon(Q_relleno,fig,axes,ene,year_i,year_f):
   caudales_pbb_mes = {x:'' for x in Q_relleno.columns}
   
   # crear archivo para guardar estaciones
-  save_path=os.path.join('.','outputs','CVE_caudales_mon.xlsx')
+  save_path=os.path.join('.','outputs','CVE_caudales_'+cuenca+'.xlsx')
   writer=pd.ExcelWriter(save_path, engine='xlsxwriter')
 
     # iterar sobre estaciones
@@ -354,7 +354,7 @@ markersize=12, legend=False, linewidth = lw, logy=False)
     
     worksheet = writer.sheets[estacion[0:31]]
     worksheet.write_string(0, 0, 'Curvas de variación estacional '+estacion)
-    # worksheet.getCells().deleteRows(2,1,True)
+    worksheet.getCells().deleteRows(2,1,True)
 
     axis.set_title(estacion.title().upper(), fontsize = 10)
     
@@ -374,7 +374,7 @@ markersize=12, legend=False, linewidth = lw, logy=False)
     axis.set_ylabel('Caudal $(m^3/s)$',  fontsize = fs_labels)
     axis.set_ylim(bottom = 0)
     axis.grid()
-    axis.legend(['Q5%','Q10%','Q20%','Q50%','Q85%','Q95%'],
+    axis.legend(['Q20%','Q50%','Q85%','Q90%','Q95%'],
                 prop={'size': fs_titles})
 
   writer.save()
@@ -420,7 +420,7 @@ def CDQ(file, lc, fig, axes):
       axes[i].set_ylabel('Caudal ($m^3/s$)',  fontsize = fs_labels)
           
 
-def CMA(file, w, h, nr, nc):
+def CMA(file, w, h, nr, nc, cuenca):
   # lirerias
   import statsmodels.api as sm
   import locale
@@ -477,7 +477,7 @@ def CMA(file, w, h, nr, nc):
   from unidecode import unidecode
 
   Q_relleno_yr.columns = [unidecode(x) for x in Q_relleno_yr.columns]
-  Q_relleno_yr.to_csv(r'./outputs/caudales/QMA_CNC_Río_Rapel.csv')
+  Q_relleno_yr.to_csv(r'./outputs/caudales/QMA_cuenca_Río_'+cuenca+'_.csv')
 
 
 def ANOM(file, w, h, locx, locy, thickness, freq, fig, axes):
@@ -618,7 +618,6 @@ def CDA(file):
 
     #        
         for ind,yr in enumerate(years[:-1]):
-
             Q_relleno.loc[((Q_relleno['hydro_year'] >= years[ind]) & (Q_relleno['hydro_year'] <= years[ind+1])), col] = Q_relleno.loc[((Q_relleno['hydro_year'] >= years[ind]) & (Q_relleno['hydro_year'] <= years[ind+1])), col]*pendientes_corregidas[ind]
     
         #%%
