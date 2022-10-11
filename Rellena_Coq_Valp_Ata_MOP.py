@@ -35,7 +35,7 @@ list_DGA = [] # lista de rutas de archivos de registros DGA completados con MOP 
 
 for path, subdirs, files in os.walk(ruta_Archivos):
     for name in files:
-        if name.startswith("CaudalesDGAyMOP_") and ('Atacama' in name or 'Valpara' in name or 'Coquimbo' in name):
+        if name.startswith("CaudalesDGAyMOP_") and ('Atacama' in name or 'Valpara' in name or 'Coquimbo' in name) and name.endswith("revA.xlsx"):
             list_DGA.append(pathlib.PurePath(path, name))
 
 # lista de rutas de archivos de registros MOP con registros previos a 1972
@@ -74,7 +74,11 @@ for fnD, fnM  in zip(list_DGA, list_MOP): # itera entre los pares de nombres de 
         
     else:            
         f_MOP =  pd.read_excel(fnM, sheet_name = 'Flags', parse_dates=[0]) # carga flags registros MOP
+        f_MOP =  f_MOP.set_index(f_MOP.columns[0]) # convierte fechas a indice
+        f_MOP.index.name = None # remueve Unnamed: 0 
         q_MOP =  pd.read_excel(fnM, sheet_name = 'Data', parse_dates=[0]) # carga registros de estaciones MOP
+        q_MOP =  q_MOP.set_index(q_MOP.columns[0]) # convierte fechas a indice
+        q_MOP.index.name = None # remueve Unnamed: 0 
 
 
     q_DGAyMOP = merge_dfs(q_DGA,q_MOP) # reemplaza valores NaN de los registros DGA con valores no NaN de los registros MOP correspondientes al dia y agrega estaciones faltantes 
