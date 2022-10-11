@@ -10,10 +10,10 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import os
 from hydroeval import evaluator, nse
+import statsmodels.api as sm
 import numpy as np
 from scipy.signal import find_peaks
 from scipy import interpolate
-import statsmodels.api as sm
 from hydrobox.discharge import flow_duration_curve
 import fiscalyear
 import scipy.stats as st
@@ -563,8 +563,7 @@ def CDA(file):
     import warnings
     warnings.simplefilter(action='ignore', category=FutureWarning)
         
-    ruta =  file
-    Q_relleno_orig = pd.read_csv(ruta, index_col = 0, parse_dates = True)
+    Q_relleno_orig = file
     Q_relleno = Q_relleno_orig.copy()
     
     for j, row in Q_relleno.iterrows():
@@ -572,14 +571,10 @@ def CDA(file):
         
     Q_anual = Q_relleno.copy()
     Q_anual = Q_anual.groupby('hydro_year').mean()
-#    CAA = Q_relleno.reindex(index=Q_relleno.index[::-1]).cumsum()
     CAA = Q_anual.cumsum()
     
     corr = Q_anual.corr()
-    
-#    nticks = 2
-#    fig, ax = plt.subplots(4,5)
-#    ax = ax.reshape(-1)   
+
     for i_col,col in enumerate(Q_relleno.columns[:-1]):
 
         candidatas = corr[col][corr[col] > 0.8].index
@@ -588,12 +583,6 @@ def CDA(file):
         y = CAA[col]      
         
         tck = interpolate.splrep(x, y, k=2, s=0)
-    #    xnew = np.linspace(0, np.max(x))    
-    #    fig, axes = plt.subplots(2)
-    
-    #    axes[0].plot(x, y, 'x', label = 'data')
-    #    axes[0].plot(xnew, interpolate.splev(xnew, tck, der=0), label = 'Fit')
-    #    axes[1].plot(x, interpolate.splev(x, tck, der=1), label = '1st dev')
         dev_2 = np.diff(interpolate.splev(x, tck, der=1))
         
         peaks_max, maximums = find_peaks(dev_2, height=0)
@@ -608,7 +597,6 @@ def CDA(file):
         indices.append(-1)
         years = CAA_candidatas.index[indices].to_list()
         
-    #    plt.figure()
         pendientes_corregidas = []
          
         for i,indice in enumerate(indices[:-1]):
@@ -620,42 +608,19 @@ def CDA(file):
                 Y = y.iloc[indice:indices[i+1]+1]
             
             m = regresion(X,Y)[0]
-    
-    #        n = regresion(X,Y)[1]    
+       
             m = sm.OLS(endog=Y, exog=X).fit().params.values
-#            print(m)
             if i < 1:
                 m_0 = m
                 pendientes_corregidas.append(1.)
             else:
                 pendientes_corregidas.append(m_0/m)
-    #        res1 = curve_fit(linear_reg, X, Y)[0][0]
-#            plt.plot(X,Y)
-    #        plt.plot(np.linspace(np.min(X),np.max(X),100),n+m*np.linspace(np.min(X),np.max(X),100))
-#            plt.plot(np.linspace(np.min(X),np.max(X),100),m*pendientes_corregidas[i]*np.linspace(np.min(X),np.max(X),100))
-#            plt.tight_layout()
-#            plt.xlabel('Caudal patrón ($m^3/s$)')
-#            plt.ylabel('Caudal estación '+col+' ($m^3/s$)')
-#            plt.show()
+
     #        
         for ind,yr in enumerate(years[:-1]):
-    #        print(years[ind])
-    #        print(years[ind+1])
-#            print(pendientes_corregidas[ind])
+
             Q_relleno.loc[((Q_relleno['hydro_year'] >= years[ind]) & (Q_relleno['hydro_year'] <= years[ind+1])), col] = Q_relleno.loc[((Q_relleno['hydro_year'] >= years[ind]) & (Q_relleno['hydro_year'] <= years[ind+1])), col]*pendientes_corregidas[ind]
     
-        
-#        Q_relleno_orig[col].plot(ax = ax[i_col])
-#        Q_relleno[col].plot(ax = ax[i_col])
-#        ticks = ax[i_col].xaxis.get_ticklocs()[::nticks]
-#        fig.canvas.draw()
-#        ticklabels = [l.get_text() for l in ax[i_col].xaxis.get_ticklabels()][::nticks]
-#        
-#        ax[i_col].xaxis.set_ticks(ticks)
-#        ax[i_col].xaxis.set_ticklabels(ticklabels)
-#        
-#        plt.ylabel('Caudal ($m^3/s$)')
-#        plt.legend(['Original','Corregida'])
         #%%
     del Q_relleno['hydro_year']
     return Q_relleno

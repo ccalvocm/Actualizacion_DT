@@ -8,7 +8,7 @@ Created on Tue Oct 11 11:48:59 2022
 import os
 import pandas as pd
 import modules_CCC
-import matplotlib.pyploy as plt
+import matplotlib.pyplot as plt
 
 # =======================================     
 def runoff(cuenca):
@@ -18,23 +18,19 @@ def runoff(cuenca):
     
     # diccionario de caudales en cada caso
     dicc_caudales={
-'Nuble':[os.path.join('.','outputs','q_relleno_Nuble_1987-2022_monthly.csv'),
-os.path.join('.','outputs','Metadata_Q_Nuble.csv')]}
-
-    # df con Estaciones
-    df_estaciones=pd.read_csv(dicc_caudales[cuenca][1])
+'Limari':os.path.join('.','outputs','q_relleno_limari_1953-2022_monthly.xlsx')}
     
-    caudales=modules_CCC.CDA(dicc_caudales[cuenca][0])
-    df=df_estaciones[df_estaciones['rut'].isin(caudales.columns)]
-    # geo_df=gpd.GeoDataFrame(df,geometry=gpd.points_from_xy(df['Lon'],
-    #                                                        df['Lat']))
-    # geo_df=geo_df.set_crs(epsg=4326)
+    # df con Estaciones
+    df_estaciones=pd.read_excel(dicc_caudales[cuenca],sheet_name='Ficha_est')
+    metadata_cuenca=df_estaciones[(df_estaciones['Cuenca'].str.lower().str.contains('limar')) & (~df_estaciones['Cuenca'].str.lower().str.contains('costeras'))]
+    df=pd.read_excel(dicc_caudales[cuenca],sheet_name='Data',index_col=0,parse_dates=True)
+    df_cuenca=df[df.columns[df.columns.isin(list(metadata_cuenca['rut']))]]
+    
+    caudales=modules_CCC.CDA(df_cuenca)
     
     # graciar hidrogramas
-    caudales_nam=modules_CCC.get_names(caudales,df_estaciones[['Estacion',
+    caudales_nam=modules_CCC.get_names(caudales,metadata_cuenca[['Estacion',
                                                                'rut']])
-    caudales_nam.columns=caudales_nam.columns
-    caudales_nam.columns=[x.replace('Rio','Río').replace('_',' ').replace('DGA','').replace('nn','ñ').title() for x in caudales_nam.columns]
         
     for i in range(4,len(caudales_nam.columns)+4,4):
         # caudales medios anuales

@@ -525,6 +525,37 @@ os.path.join('..', 'SIG', 'SHACS',
                 df_check=q_mon_MLR[estaciones].copy()
                 
 #%% plots para presentación
+    # q_mon_MLR=q_mon_MLR.loc[q_mon_MLR.index>='1982-03-31']
+    # qmon_filtradas=qmon_filtradas.loc[qmon_filtradas.index>='1982-03-31']   
+    lista_limari = ['04532001-4', '04534001-5', '04533002-8', '04520001-9', '04522001-K', '04530001-3', 
+                    '04531001-9', '04531002-7', '04514001-6', '04515002-K', '04535002-9', '04535003-7',
+                    '04537001-1', '04506002-0', '04506003-9', '04550003-9', '04540003-4', '04501001-5',
+                    '04501002-3', '04502001-0', '04503001-6', '04516001-7', '04523001-5', '04522002-8',
+                    '04523002-3', '04540001-8', '04556001-5', '04557002-9', '04558001-6', '04511002-8',
+                    '04512001-5', '04513001-0']
+    lista_limari=[x for x in lista_limari if x not in ['04535003-7', '04506003-9', '04540003-4']]
+    n=int(np.sqrt(len(lista_limari)))+1
+    fig,axes=plt.subplots(1)
+    axes=q_mon_MLR[lista_limari].plot(subplots=True,layout=(n,n),rot=90,color='b')
+    plt.subplots_adjust(left=0.1,
+                    bottom=0.1, 
+                    right=0.9, 
+                    top=0.9, 
+                    wspace=0.37, 
+                    hspace=0.27)
+    axes=axes.reshape(-1)
+    for i,a in enumerate(axes):
+        if i < len(lista_limari):
+            qmon_filtradas[lista_limari[i]].plot(ax=a,rot=90,color='r')
+            a.legend(loc='best', prop={'size': 7})
+            a.set_ylim(bottom=0)
+            a.set_ylabel('$\overline{Q}$mensual ($m^3/s$)', fontsize=9)
+            a.set_ylabel('$\overline{Q}$mensual ($m^3/s$)', fontsize=9)
+            a.set_title(gdf_metadata.Estacion[gdf_metadata.rut == lista_limari[i]].iloc[0], fontsize=9)
+            # a.set_xlim(['1982-04-01','2022-04-01'])
+            a.tick_params(axis='y', which='major', labelsize=9)
+            a.get_legend().remove()
+#%% plots para presentación
     # qmon_filtradas=qmon_filtradas.loc[qmon_filtradas.index>='1982-04-01']
     plt.close('all')
     q_mon_MLR=q_mon_MLR.loc[q_mon_MLR.index>='1982-04-01']
