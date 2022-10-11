@@ -239,8 +239,8 @@ def merge_columns(df):
     df_merged=pd.DataFrame(index=pd.date_range(df.index.min(),
 df.index.max(),freq='1d'),columns=[df.columns[0]])
     
-    for col in list(reversed(df.columns)):
-        columna=df[col][df[col].notna()]
+    for col in reversed(range(len(df.columns)-1)): # itera sobre indices de columnas en vez de nombres porque cuando los nombres de columnas son iguales no funciona
+        columna=df.iloc[:,col][df.iloc[:,col].notna()]
         df_merged.loc[columna.index,df_merged.columns[0]]=columna.values
     return df_merged
 
@@ -387,13 +387,13 @@ os.path.join('..', 'SIG', 'SHACS',
     q_day_2_dga=pd.read_excel(ruta_Q_2_dga,sheet_name='Datos',index_col=0,
                               parse_dates=True,skiprows=[1])
     
-    # merge maule, nuble y biobio
+    # merge region 1, region 2 y region 3
     q_day=pd.concat([q_day_0_dga,q_day_1_dga,q_day_2_dga])
 
     #filtrar estaciones que sean canales, vertederos, desagues
     names_blacklist=['canal','desague','vertedero','dren']
     
-    # leer metadata dga de Maule y Biobio (Nuble esta incluida)
+    # leer metadata dga de region 1, region 2 y region 3
     metadata_0_dga=pd.read_excel(ruta_Q_0_dga,sheet_name='Ficha_est',index_col=0)
     metadata_0_dga[['Lon','Lat']]=metadata_0_dga[['Lon','Lat']].applymap(lambda x:parse_dms(x))
     metadata_1_dga=pd.read_excel(ruta_Q_1_dga,sheet_name='Ficha_est',index_col=0)
@@ -407,6 +407,16 @@ os.path.join('..', 'SIG', 'SHACS',
     blacklist=metadata['Estacion'].str.lower().str.contains('|'.join(names_blacklist))
     metadata=metadata[~blacklist]
     
+    # leer y combinar informacion de estaciones duplicadas
+    dupls=metadata['rut'][metadata['rut'].duplicated()]
+    
+    for dupl in dupls:
+        rut_dupl=metadata['rut'][metadata['rut']==dupl]
+        q_day[rut_dupl.iloc[0]]=merge_columns(q_day[rut_dupl])
+        del q_day[rut_dupl.iloc[-1]]
+    
+    metadata.drop_duplicates(subset='rut') #eliminar estaciones duplicadas
+    
     # gdf de metadata
     gdf_metadata=gpd.GeoDataFrame(metadata,
             geometry=gpd.points_from_xy(x=metadata['Lon'],y=metadata['Lat']))
@@ -415,14 +425,6 @@ os.path.join('..', 'SIG', 'SHACS',
     
     # estaciones en shacs
     est_utm_shac=gpd.overlay(gdf_metadata,shacs_reg)
-    
-    # leer y completar estaciones duplicadas
-    dupls=metadata['Estacion'][metadata['Estacion'].duplicated()]
-    
-    for dupl in dupls:
-        rut_dupl=metadata['rut'][metadata['Estacion']==dupl]
-        q_day[rut_dupl.iloc[0]]=merge_columns(q_day[rut_dupl])
-        del q_day[rut_dupl.iloc[-1]]
     
     # filtrar los caudales segun fechas a rellenar
     q_day=q_day.loc[(q_day.index<=date_end) & (q_day.index>=date_start)]
