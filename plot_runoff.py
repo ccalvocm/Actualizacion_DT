@@ -51,3 +51,6 @@ caudales_nam.index.year[0],caudales_nam.index.year[-1])
         axes=axes.reshape(-1)
         modules_CCC.ANOM(caudales_nam.iloc[:,i-4:i], 20, 11, 0.72, 0.02, 110, 'MS', fig, axes)
             
+    def main():
+        cuenca='Limari'
+        runoff(cuenca)
