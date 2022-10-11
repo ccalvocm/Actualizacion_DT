@@ -354,7 +354,7 @@ markersize=12, legend=False, linewidth = lw, logy=False)
     
     worksheet = writer.sheets[estacion[0:31]]
     worksheet.write_string(0, 0, 'Curvas de variación estacional '+estacion)
-    worksheet.getCells().deleteRows(2,1,True)
+    # worksheet.getCells().deleteRows(2,1,True)
 
     axis.set_title(estacion.title().upper(), fontsize = 10)
     
