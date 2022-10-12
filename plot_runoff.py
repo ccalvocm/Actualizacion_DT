@@ -18,7 +18,7 @@ def runoff(cuenca):
     
     # diccionario de caudales en cada caso
     dicc_caudales={
-'Limari':os.path.join('.','outputs','q_relleno_limari_1953-2022_monthly.xlsx')}
+'Limari':os.path.join('.','outputs','q_relleno_limari_1951-2022_monthly.xlsx')}
     
     # df con Estaciones
     df_estaciones=pd.read_excel(dicc_caudales[cuenca],sheet_name='Ficha_est')
@@ -35,7 +35,7 @@ def runoff(cuenca):
     plt.close('all')
     
     # crear archivo para guardar estaciones
-    save_path=os.path.join('.','outputs','CVE_caudales_'+cuenca+'.xlsx')
+    save_path=os.path.join('.','outputs','CVE_1950-2000_caudales_'+cuenca+'.xlsx')
     writer=pd.ExcelWriter(save_path, engine='xlsxwriter')
     
     for i in range(2,len(caudales_nam.columns)+2,2):
