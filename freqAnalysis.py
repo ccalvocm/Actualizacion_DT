@@ -88,7 +88,7 @@ def best_fit_distribution(data, bins, DISTRIBUTIONS):
                 xi2 = np.sum(np.power(y - pdf, 2.0)/pdf)
                 sse = np.sum(np.power(y - pdf, 2.0))
             # identify if this distribution is better
-            if best_sse > sse > 0:
+            if best_xi2 > xi2 > 0:
                 best_distribution = distribution
                 best_params = params
                 best_sse = sse
@@ -137,7 +137,7 @@ def CVE_pdf(df_relleno, pbbs, distr):
     best_dist_list = []
 
     # bins según Gabriel Castro, Uch.
-    bins = 200
+    bins = 50
 
     # iniciarlizar df y recorrer meses
     cve_pdf = pd.DataFrame(
@@ -155,18 +155,17 @@ def CVE_pdf(df_relleno, pbbs, distr):
         scale=best_fit_params[-1]
 
         # aca se calcularse todas las pbb y no iterar
-        
         if best_fit_name == 'logpearson3':
             best_dist = getattr(st, 'pearson3')
             func=lambda x: np.exp(best_dist.ppf(1-x,loc=loc,scale=scale,*arg))
         else:
             best_dist = getattr(st, best_fit_name)
             func=lambda x:best_dist.ppf(1-x,*best_fit_params)
-        cve_pdf.loc[mes]=cve_pdf.columns.to_series().apply(func)
+        cve_pdf.loc[mes]=cve_pdf.columns.to_series().apply(func).values
 
         distr_corr=distr.copy()
 
-        while (cve_pdf.loc[mes].min()<0) | (any(cve_pdf.loc[mes].diff()>0)):
+        while (cve_pdf.loc[mes].min()<0) | (any(cve_pdf.loc[mes].diff()>0)) | (any(cve_pdf.loc[mes].isna())) | any(np.abs((cve_pdf.loc[mes]/cve_pdf.loc[mes].max()))<1e-5):
                         
             if best_fit_name=='logpearson3':
                 distr_corr.remove('logpearson3')
@@ -175,6 +174,11 @@ def CVE_pdf(df_relleno, pbbs, distr):
                 
             best_fit_name, best_fit_params=best_fit_distribution(data, bins,
                                                                    distr_corr)
+
+            # Separate parts of parameters
+            arg=best_fit_params[:-2]
+            loc=best_fit_params[-2]
+            scale=best_fit_params[-1]
                             
             if best_fit_name == 'logpearson3':
                 best_dist = getattr(st, 'pearson3')
@@ -183,7 +187,7 @@ def CVE_pdf(df_relleno, pbbs, distr):
                 best_dist = getattr(st, best_fit_name)
                 func=lambda x:best_dist.ppf(1-x,*best_fit_params)
             
-            cve_pdf.loc[mes]=cve_pdf.columns.to_series().apply(func)
+            cve_pdf.loc[mes]=cve_pdf.columns.to_series().apply(func).values
 
         best_dist_list.append(best_fit_name)
 
@@ -219,7 +223,7 @@ def CVE_pdf_yr(df_relleno, pbbs, distr):
     best_dist_list = []
 
     # bins según Gabriel Castro, Uch.
-    bins = 200
+    bins = 50
 
     # iniciarlizar df y recorrer meses
     cve_pdf = pd.DataFrame(
@@ -247,7 +251,7 @@ def CVE_pdf_yr(df_relleno, pbbs, distr):
 
     distr_corr=distr.copy()
 
-    while (cve_pdf.loc[0].min()<0) | (any(cve_pdf.loc[0].diff()>0)):
+    while (cve_pdf.loc[0].min()<0) | (any(cve_pdf.loc[0].diff()>0)) | (any(cve_pdf.loc[0].isna())):
                     
         if best_fit_name=='logpearson3':
             distr_corr.remove('logpearson3')
@@ -256,7 +260,12 @@ def CVE_pdf_yr(df_relleno, pbbs, distr):
             
         best_fit_name, best_fit_params=best_fit_distribution(data, bins,
                                                                distr_corr)
-                        
+        
+        # Separate parts of parameters
+        arg=best_fit_params[:-2]
+        loc=best_fit_params[-2]
+        scale=best_fit_params[-1]
+            
         if best_fit_name == 'logpearson3':
             best_dist = getattr(st, 'pearson3')
             func=lambda x:np.exp(best_dist.ppf(1-x,loc=loc,scale=scale,*arg))

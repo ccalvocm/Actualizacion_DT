@@ -284,7 +284,7 @@ def CVE_1979_2019(file, fig, axes, ene, flag):
 
 # ------------------------------------------------------------------------------------------------
 
-def CVE_mon(Q_relleno,fig,axes,ene,year_i,year_f,cuenca):
+def CVE_mon(Q_relleno,fig,axes,ene,year_i,year_f,cuenca,writer):
     
   def most_common(lst):
     return max(set(lst), key=lst.count)
@@ -314,10 +314,6 @@ def CVE_mon(Q_relleno,fig,axes,ene,year_i,year_f,cuenca):
   lw = 3
   caudales_pbb_mes = {x:'' for x in Q_relleno.columns}
   
-  # crear archivo para guardar estaciones
-  save_path=os.path.join('.','outputs','CVE_caudales_'+cuenca+'.xlsx')
-  writer=pd.ExcelWriter(save_path, engine='xlsxwriter')
-
     # iterar sobre estaciones
   for i,estacion in enumerate(Q_relleno.columns):
 
@@ -327,39 +323,34 @@ def CVE_mon(Q_relleno,fig,axes,ene,year_i,year_f,cuenca):
                                               distr)
     # anuales
     df_q_yr=df_q[:]
-    df_q_yr=df_q_yr.groupby(df_q_yr.index.map(lambda x: agnohidrologico(int(x.year),int(x.month)))).mean()
+    df_q_yr=df_q_yr.groupby(df_q_yr.index.map(lambda x: agnohidrologico(int(x.year),
+                                                        int(x.month)))).mean()
     distr2,CVE=freqAnalysis.CVE_pdf_yr(df_q_yr,probabilidades_excedencia,
                                               distr)
     
-    # promedio_remporadas
+    # promedio_temporadas
     # abril-sepriembte
     df_as=df_q[df_q.index.month.isin(list(range(4,10)))]
-    df_as_yr=df_as.groupby(df_as.index.map(lambda x: agnohidrologico(int(x.year),int(x.month)))).mean()
+    df_as_yr=df_as.groupby(df_as.index.map(lambda x: agnohidrologico(int(x.year),
+                                                        int(x.month)))).mean()
     distr3,CVE=freqAnalysis.CVE_pdf_yr(df_as_yr,probabilidades_excedencia,
                                               distr)
     
     # oct-mar
     df_om=df_q[df_q.index.month.isin([10,11,12,1,2,3])]
-    df_om_yr=df_om.groupby(df_om.index.map(lambda x: agnohidrologico(int(x.year),int(x.month)))).mean()
+    df_om_yr=df_om.groupby(df_om.index.map(lambda x: agnohidrologico(int(x.year),
+                                                        int(x.month)))).mean()
     distr4,CVE=freqAnalysis.CVE_pdf_yr(df_om_yr,probabilidades_excedencia,
                                               distr)
     # distribucion adoptada
     dist_adopt=most_common(distrs+distr2+distr3+distr4)
     print(dist_adopt)
-    if dist_adopt=='logpearson3':
-        distrs,CVE_rellenada=freqAnalysis.CVE_pdf(df_q,probabilidades_excedencia,
-                                                  ['logpearson3'])
-    else:
-        distrs,CVE_rellenada=freqAnalysis.CVE_pdf(df_q,probabilidades_excedencia,
-                                                  [getattr(st, dist_adopt)])
 
-    
     pbb_mensuales.loc[pbb_mensuales.index,probabilidades_excedencia]=CVE_rellenada.values
     
     caudales_pbb_mes[estacion] = pbb_mensuales
 
 #Graficar
-
     axis = axes[i]
     
     axis.tick_params(axis='both', which='major', labelsize = fs_titles)
@@ -375,7 +366,8 @@ markersize=12, legend=False, linewidth = lw, logy=False)
 
     # Write each dataframe to a different worksheet.
     df_export.index.names = ['Mes']
-    df_export.to_excel(writer, sheet_name=estacion[0:31], encoding='latin1', startcol = 0, startrow = 1)
+    df_export.to_excel(writer,sheet_name=estacion[0:31],encoding='latin1',
+                       startcol=0,startrow=1)
     
     worksheet = writer.sheets[estacion[0:31]]
     worksheet.write_string(0, 0, 'Curvas de variación estacional '+estacion)
@@ -401,9 +393,6 @@ markersize=12, legend=False, linewidth = lw, logy=False)
     axis.grid()
     axis.legend(['Q20%','Q50%','Q85%','Q90%','Q95%'],
                 prop={'size': fs_titles})
-
-  writer.save()
-  writer.close()
 # ===================================================================================
 
 def CDQ(file, lc, fig, axes):
