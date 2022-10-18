@@ -332,24 +332,60 @@ os.path.join('..', 'SIG', 'SHACS',
 
     for path, subdirs, files in os.walk(ruta_Archivos):
         for name in files:
-            if name.startswith("CaudalesDGAyMOP_"): list_arc_est.append(pathlib.PurePath(path, name))
+            if name.startswith("CaudalesDGAyMOP_") and name.endswith('revB.xlsx'): list_arc_est.append(pathlib.PurePath(path, name))
+#%% dataframes de informacion consolidada de todas las estaciones
     
-    # ruta de archivos con registros previos a 1972 (revB)
-    ruta_Q_0_dga=[x for x in list_arc_est if 'Atacama' in x.name and x.name.endswith('revB.xlsx')][0]
-    ruta_Q_1_dga=[x for x in list_arc_est if 'Coquimbo' in x.name and x.name.endswith('revB.xlsx')][0]
-    ruta_Q_2_dga=[x for x in list_arc_est if 'Valpara' in x.name and x.name.endswith('revB.xlsx')][0]
+    q_est = pd.read_excel(list_arc_est[0], sheet_name = 'Datos', index_col=0, parse_dates=True, skiprows=[1])
+    f_est = pd.read_excel(list_arc_est[0], sheet_name = 'Datos', index_col=0, parse_dates=True, skiprows=[1])
+    md_est = pd.DataFrame()
+    for fn in list_arc_est:
+        q_est =merge_dfs(q_est,pd.read_excel(fn, sheet_name = 'Datos', index_col=0, parse_dates=True, skiprows=[1])) 
+        f_est = merge_dfs(f_est,pd.read_excel(fn, sheet_name = 'Datos', index_col=0, parse_dates=True, skiprows=[1]))
+        md_est = pd.concat([md_est, pd.read_excel(fn, sheet_name = 'Ficha_est', index_col=0)], ignore_index=True)
+    
+    md_est.drop_duplicates(subset='rut',inplace=True) #eliminar estaciones duplicadas
+    md_est.reset_index(drop=True, inplace=True) # reinicia indice
+    md_est.index += 1 # hacer que indice de metadata empiece desde 1
+    
+    md_est[['Lon','Lat']]=md_est[['Lon','Lat']].applymap(lambda x:parse_dms(x)) # convertir grados/minutos/segundos a decimal de metadata
+  
+    # guardar registros consolidados de estaciones 
+    q_est.to_pickle(r'D:\Documentos\DT\Scripts\dataframes\q_est.pkl')
+    f_est.to_pickle(r'D:\Documentos\DT\Scripts\dataframes\f_est.pkl')
+    md_est.to_pickle(r'D:\Documentos\DT\Scripts\dataframes\md_est.pkl')
+ 
+ #%% 
+    
+    q_est = pd.read_pickle(r'D:\Documentos\DT\Scripts\dataframes\q_est.pkl') # cargar dataframe de estaciones consolidados
+    f_est = pd.read_pickle(r'D:\Documentos\DT\Scripts\dataframes\f_est.pkl') # cargar dataframe de estaciones consolidados
+    md_est = pd.read_pickle(r'D:\Documentos\DT\Scripts\dataframes\md_est.pkl') # cargar dataframe de metadata de todas las estaciones
+    
+    # gdf de metadata
+    gdf_md=gpd.GeoDataFrame(md_est, geometry=gpd.points_from_xy(x=md_est['Lon'],y=md_est['Lat']))
+    gdf_md.set_crs(epsg='4326',inplace=True)
+    gdf_md.to_crs(epsg='32719',inplace=True)
 
     # region y shacs
     ruta_reg=os.path.join('..','SIG','Base','REGIONES_2020.shp')
     path_shac = os.path.join('..', 'SIG', 'SHACS','Acuiferos_SHAC_Julio_2022.shp')   
     
     shacs=gpd.read_file(path_shac)
-    reg=gpd.read_file(ruta_reg)
-    reg=reg[reg['REGION']=='Coquimbo']
-    
-    # unir region Nuble y shacs
+    reg=gpd.read_file(ruta_reg)     
     reg.set_crs(epsg='5360',inplace=True)
     reg.to_crs(epsg='32719',inplace=True)
+    
+    gdf_md = gpd.overlay(gdf_md,reg[['CUT_REG','REGION','geometry']]) # anade informacion de region a metadata estaciones
+    gdf_md = gpd.overlay(gdf_md,shacs[['ID_UNICO','COD_SHAC','COD_BNA_SH','SHAC','TIPO_LIMIT','COD_BNA_AC','NOM_ACUIF','geometry']], how='union') # anade informacion de SHACs a metadata estaciones
+    
+    # gdf_md.to_file(pathlib.PurePath(root,'..','SIG','Estaciones','estaciones_DGA.shp').__str__())
+    
+    #filtrar estaciones que sean canales, vertederos, desagues
+    names_blacklist=['canal','desague','vertedero','dren']
+    
+    blacklist=md_est['Estacion'].str.lower().str.contains('|'.join(names_blacklist))
+    md_est=md_est[~blacklist]
+    
+    # unir region Nuble y shacs
     shacs_inter=gpd.overlay(shacs, gpd.GeoDataFrame([],
                                                     geometry=reg.buffer(1e3)))
     #%%
