@@ -197,7 +197,7 @@ def day_to_mon(df_day,flags_DGA):
     
     return df_filter_mon
     
-def filter_outliers(serie,df_completo,flag=False):
+def filter_outliers(serie,df_completo,flag=True):
     # filtrar flags DGA      
     rut=serie.name
     df_est_completo=pd.DataFrame(df_completo[rut]).copy()
@@ -234,8 +234,8 @@ def merge_columns(df):
     df_merged=pd.DataFrame(index=pd.date_range(df.index.min(),
 df.index.max(),freq='1d'),columns=[df.columns[0]])
     
-    for col in list(reversed(df.columns)):
-        columna=df[col][df[col].notna()]
+    for col in reversed(range(len(df.columns)-1)): # itera sobre indices de columnas en vez de nombres porque cuando los nombres de columnas son iguales no funciona
+        columna=df.iloc[:,col][df.iloc[:,col].notna()]
         df_merged.loc[columna.index,df_merged.columns[0]]=columna.values
     return df_merged
 
@@ -253,7 +253,7 @@ def dd2dms(deg):
     return [d, m, sd]
 
 def parse_dms(dms):
-    if not isinstance(dms, float):
+    if not isinstance(dms, (int, float)):
         parts = re.split('[^\d\w]+', dms)
         lat = dms2dd(parts[0], parts[1], parts[2], parts[3])
     else:
