@@ -319,7 +319,7 @@ os.path.join('..', 'SIG', 'SHACS',
 #%%    
 
     #minimo de años con datos, Quevedo et al. (2021)
-    minYr = 4
+    minYr = 20
 
     # rango de fechas de las nuevas normales
     date_start=pd.to_datetime(str(1950)+'-04-01')
@@ -327,7 +327,7 @@ os.path.join('..', 'SIG', 'SHACS',
     
     # rutas
     root='.'
-    ruta_Archivos=join_path(root,'..','Antecedentes','Caudales')
+    ruta_Archivos=pathlib.PurePath(root,'..','Antecedentes','Caudales')
     list_arc_est = []
 
     for path, subdirs, files in os.walk(ruta_Archivos):
@@ -336,11 +336,11 @@ os.path.join('..', 'SIG', 'SHACS',
 #%% dataframes de informacion consolidada de todas las estaciones
     
     q_est = pd.read_excel(list_arc_est[0], sheet_name = 'Datos', index_col=0, parse_dates=True, skiprows=[1])
-    f_est = pd.read_excel(list_arc_est[0], sheet_name = 'Datos', index_col=0, parse_dates=True, skiprows=[1])
+    f_est = pd.read_excel(list_arc_est[0], sheet_name = 'Flags', index_col=0, parse_dates=True, skiprows=[1])
     md_est = pd.DataFrame()
     for fn in list_arc_est:
         q_est =merge_dfs(q_est,pd.read_excel(fn, sheet_name = 'Datos', index_col=0, parse_dates=True, skiprows=[1])) 
-        f_est = merge_dfs(f_est,pd.read_excel(fn, sheet_name = 'Datos', index_col=0, parse_dates=True, skiprows=[1]))
+        f_est = merge_dfs(f_est,pd.read_excel(fn, sheet_name = 'Flags', index_col=0, parse_dates=True, skiprows=[1]))
         md_est = pd.concat([md_est, pd.read_excel(fn, sheet_name = 'Ficha_est', index_col=0)], ignore_index=True)
     
     md_est.drop_duplicates(subset='rut',inplace=True) #eliminar estaciones duplicadas
@@ -380,11 +380,11 @@ os.path.join('..', 'SIG', 'SHACS',
     gdf_md.to_crs(epsg='32719',inplace=True)
 
     # region y shacs
-    ruta_reg=os.path.join('..','SIG','Base','REGIONES_2020.shp')
-    path_shac = os.path.join('..', 'SIG', 'SHACS','Acuiferos_SHAC_Julio_2022.shp')   
+    ruta_reg=pathlib.PurePath('..','SIG','Base','REGIONES_2020.shp')
+    path_shac=pathlib.PurePath('..', 'SIG', 'SHACS','Acuiferos_SHAC_Julio_2022.shp')
     
-    shacs=gpd.read_file(path_shac)
-    reg=gpd.read_file(ruta_reg)     
+    shacs=gpd.read_file(path_shac.__str__())
+    reg=gpd.read_file(ruta_reg.__str__())     
     reg.set_crs(epsg='5360',inplace=True)
     reg.to_crs(epsg='32719',inplace=True)
     
@@ -418,21 +418,17 @@ os.path.join('..', 'SIG', 'SHACS',
     # # unir region Nuble y shacs
     # shacs_inter=gpd.overlay(shacs, gpd.GeoDataFrame([],
     #                                                 geometry=reg.buffer(1e3)))
-    #%%
-    gdf_md = pd.read_pickle(r'D:\Documentos\DT\Scripts\dataframes\gdf_md.pkl') # cargar geodataframe de metadata de todas las estaciones
-    gdf_md_DT02 = pd.read_pickle(r'D:\Documentos\DT\Scripts\dataframes\gdf_md_DT02.pkl') # cargar geodataframe de metadata de las estaciones DT-02
     
+    # shacs_reg=shacs[shacs['OBJECTID_1'].isin(shacs_inter['OBJECTID_1'])]
     
-    shacs_reg=shacs[shacs['OBJECTID_1'].isin(shacs_inter['OBJECTID_1'])]
-    
+    #%% base de datos de cuancas CAMELS-CL
     # leer dataset CAMELS
-    path_camels=os.path.join('..','Datos','dataset_cuencas','CAMELS_CL_v202201')
-    camels=pd.read_csv(os.path.join(path_camels,'catchment_attributes.csv'),
-                       index_col=0)
+    path_camels=pathlib.PurePath('..','Datos','dataset_cuencas','CAMELS_CL_v202201')
+    camels=pd.read_csv(path_camels.joinpath('catchment_attributes.csv'),index_col=0)
     
     # calcular el digito verificador
     camels.index=parse_digito_verificador(camels.index)
-    camels=filter_stations(camels,['03','04','05']) # region de atacama, coquimbo, valparaiso
+    # camels=filter_stations(camels,['03','04','05']) # region de atacama, coquimbo, valparaiso
     
     # atributos fisicos
     camels_fisico=parse_att_fisicos(camels)
@@ -447,85 +443,103 @@ os.path.join('..', 'SIG', 'SHACS',
                                                            axis=0)
     camels_fisic_norm=camels_fisic_norm.apply(lambda x: x/x.max(),axis=0)
     
-    # leer caudales
-    # dga
-    q_day_0_dga=pd.read_excel(ruta_Q_0_dga,sheet_name='Datos',index_col=0,
-                              parse_dates=True,skiprows=[1])
-    q_day_1_dga=pd.read_excel(ruta_Q_1_dga,sheet_name='Datos',index_col=0,
-                              parse_dates=True,skiprows=[1])
-    q_day_2_dga=pd.read_excel(ruta_Q_2_dga,sheet_name='Datos',index_col=0,
-                              parse_dates=True,skiprows=[1])
+    #%% Caudales mensuales
     
-    # merge region 1, region 2 y region 3
-    q_day=pd.concat([q_day_0_dga,q_day_1_dga,q_day_2_dga])
+    # # leer caudales
+    # # dga
+    # q_day_0_dga=pd.read_excel(ruta_Q_0_dga,sheet_name='Datos',index_col=0,
+    #                           parse_dates=True,skiprows=[1])
+    # q_day_1_dga=pd.read_excel(ruta_Q_1_dga,sheet_name='Datos',index_col=0,
+    #                           parse_dates=True,skiprows=[1])
+    # q_day_2_dga=pd.read_excel(ruta_Q_2_dga,sheet_name='Datos',index_col=0,
+    #                           parse_dates=True,skiprows=[1])
+    
+    # # merge region 1, region 2 y region 3
+    # q_day=pd.concat([q_day_0_dga,q_day_1_dga,q_day_2_dga])
 
-    #filtrar estaciones que sean canales, vertederos, desagues
-    names_blacklist=['canal','desague','vertedero','dren']
+    # #filtrar estaciones que sean canales, vertederos, desagues
+    # names_blacklist=['canal','desague','vertedero','dren']
     
-    # leer metadata dga de region 1, region 2 y region 3
-    metadata_0_dga=pd.read_excel(ruta_Q_0_dga,sheet_name='Ficha_est',index_col=0)
-    metadata_0_dga[['Lon','Lat']]=metadata_0_dga[['Lon','Lat']].applymap(lambda x:parse_dms(x))
-    metadata_1_dga=pd.read_excel(ruta_Q_1_dga,sheet_name='Ficha_est',index_col=0)
-    metadata_1_dga[['Lon','Lat']]=metadata_1_dga[['Lon','Lat']].applymap(lambda x:parse_dms(x))    
-    metadata_2_dga=pd.read_excel(ruta_Q_2_dga,sheet_name='Ficha_est',index_col=0)
-    metadata_2_dga[['Lon','Lat']]=metadata_2_dga[['Lon','Lat']].applymap(lambda x:parse_dms(x))    
+    # # leer metadata dga de region 1, region 2 y region 3
+    # metadata_0_dga=pd.read_excel(ruta_Q_0_dga,sheet_name='Ficha_est',index_col=0)
+    # metadata_0_dga[['Lon','Lat']]=metadata_0_dga[['Lon','Lat']].applymap(lambda x:parse_dms(x))
+    # metadata_1_dga=pd.read_excel(ruta_Q_1_dga,sheet_name='Ficha_est',index_col=0)
+    # metadata_1_dga[['Lon','Lat']]=metadata_1_dga[['Lon','Lat']].applymap(lambda x:parse_dms(x))    
+    # metadata_2_dga=pd.read_excel(ruta_Q_2_dga,sheet_name='Ficha_est',index_col=0)
+    # metadata_2_dga[['Lon','Lat']]=metadata_2_dga[['Lon','Lat']].applymap(lambda x:parse_dms(x))    
     
-    # merge metadata    
-    metadata=pd.concat([metadata_0_dga,metadata_1_dga,metadata_2_dga],ignore_index=True)
+    # # merge metadata    
+    # metadata=pd.concat([metadata_0_dga,metadata_1_dga,metadata_2_dga],ignore_index=True)
     
-    blacklist=metadata['Estacion'].str.lower().str.contains('|'.join(names_blacklist))
-    metadata=metadata[~blacklist]
+    # blacklist=metadata['Estacion'].str.lower().str.contains('|'.join(names_blacklist))
+    # metadata=metadata[~blacklist]
     
-    # leer y combinar informacion de estaciones duplicadas
-    dupls=metadata['rut'][metadata['rut'].duplicated()]
+    # # leer y combinar informacion de estaciones duplicadas
+    # dupls=metadata['rut'][metadata['rut'].duplicated()]
     
-    for dupl in dupls:
-        rut_dupl=metadata['rut'][metadata['rut']==dupl]
-        q_day[rut_dupl.iloc[0]]=merge_columns(q_day[rut_dupl])
-        del q_day[rut_dupl.iloc[-1]]
+    # for dupl in dupls:
+    #     rut_dupl=metadata['rut'][metadata['rut']==dupl]
+    #     q_day[rut_dupl.iloc[0]]=merge_columns(q_day[rut_dupl])
+    #     del q_day[rut_dupl.iloc[-1]]
     
-    metadata.drop_duplicates(subset='rut') #eliminar estaciones duplicadas
+    # metadata.drop_duplicates(subset='rut') #eliminar estaciones duplicadas
     
-    # gdf de metadata
-    gdf_metadata=gpd.GeoDataFrame(metadata,
-            geometry=gpd.points_from_xy(x=metadata['Lon'],y=metadata['Lat']))
-    gdf_metadata.set_crs(epsg='4326',inplace=True)
-    gdf_metadata.to_crs(epsg='32719',inplace=True)
+    # # gdf de metadata
+    # gdf_metadata=gpd.GeoDataFrame(metadata,
+    #         geometry=gpd.points_from_xy(x=metadata['Lon'],y=metadata['Lat']))
+    # gdf_metadata.set_crs(epsg='4326',inplace=True)
+    # gdf_metadata.to_crs(epsg='32719',inplace=True)
     
-    # estaciones en shacs
-    est_utm_shac=gpd.overlay(gdf_metadata,shacs_reg)
+    q_day = pd.read_pickle(r'D:\Documentos\DT\Scripts\dataframes\q_est.pkl') # cargar dataframe de estaciones consolidados
+    flags = pd.read_pickle(r'D:\Documentos\DT\Scripts\dataframes\f_est.pkl') # cargar dataframe de estaciones consolidados
+    
+    # # estaciones en shacs
+    # est_utm_shac=gpd.overlay(gdf_metadata,shacs_reg)
     
     # filtrar los caudales segun fechas a rellenar
     q_day=q_day.loc[(q_day.index<=date_end) & (q_day.index>=date_start)]
-
-    # leer flags 
-    # maule
-    flag_DGA_0=pd.read_excel(ruta_Q_0_dga,sheet_name='Flags',index_col=0,
-                              parse_dates=True,skiprows=[1])
-    flag_DGA_1=pd.read_excel(ruta_Q_1_dga,sheet_name='Flags',index_col=0,
-                              parse_dates=True,skiprows=[1])
-    flag_DGA_2=pd.read_excel(ruta_Q_2_dga,sheet_name='Flags',index_col=0,
-                              parse_dates=True,skiprows=[1])
-        
-    # merge 
-    flags=merge_dfs(flag_DGA_0,flag_DGA_1)
-    flags=merge_dfs(flags,flag_DGA_2)
     flags=flags.loc[(flags.index<=date_end) & (flags.index>=date_start)]
+    # # leer flags 
+    # # maule
+    # flag_DGA_0=pd.read_excel(ruta_Q_0_dga,sheet_name='Flags',index_col=0,
+    #                           parse_dates=True,skiprows=[1])
+    # flag_DGA_1=pd.read_excel(ruta_Q_1_dga,sheet_name='Flags',index_col=0,
+    #                           parse_dates=True,skiprows=[1])
+    # flag_DGA_2=pd.read_excel(ruta_Q_2_dga,sheet_name='Flags',index_col=0,
+    #                           parse_dates=True,skiprows=[1])
+        
+    # # merge 
+    # flags=merge_dfs(flag_DGA_0,flag_DGA_1)
+    # flags=merge_dfs(flags,flag_DGA_2)
+    # flags=flags.loc[(flags.index<=date_end) & (flags.index>=date_start)]
 
     # promediar caudales medios diarios considerando flags y meses con mas
     # de 20 registros
     q_mon=day_to_mon(q_day,flags)
-      
-    # caudales de rios, esteros, quebradas, etc.
-    qmon_white=q_mon.columns[q_mon.columns.isin(metadata[~blacklist]['rut'])]
-    qmon=q_mon[qmon_white]    
+    q_mon.to_pickle(r'D:\Documentos\DT\Scripts\dataframes\q_mon_1950-2022-full.pkl')
+    
   #%Crear indice de fechas, convertir años a int y calcular frecuencia de datos
 
-    # seleccionar estaciones con un minimo de 20 years (Quevedo, 2021)
-    estaciones_min=min_years(qmon,minYr)
-    qmon_filtradas=qmon.copy()[estaciones_min.index]
+    
 
     #%% Relleno
+    
+    q_mon = pd.read_pickle(r'D:\Documentos\DT\Scripts\dataframes\q_mon_1950-2022-full.pkl') # cargar dataframe de caudales mensuales de todas las estaciones
+    md_est = pd.read_pickle(r'D:\Documentos\DT\Scripts\dataframes\md_est.pkl') # cargar dataframe de metadata de todas las estaciones
+    gdf_md = pd.read_pickle(r'D:\Documentos\DT\Scripts\dataframes\gdf_md.pkl') # cargar geodataframe de metadata de todas las estaciones
+    gdf_md_DT02 = pd.read_pickle(r'D:\Documentos\DT\Scripts\dataframes\gdf_md_DT02.pkl') # cargar geodataframe de metadata de las estaciones DT-02
+
+    
+    # filtrado de estaciones validas para rellenar
+    
+    # names_blocklist=['acueducto','can ', 'canal', 'captacion', 'desague', 'dren']
+    names_blocklist=['acueducto','can ', 'canal', 'dren']
+    blocklist = md_est['Estacion'].str.lower().str.startswith(tuple(names_blocklist)) # filtra estaciones que no tienen un regimen hidrologico natural
+    q_allow = q_mon[md_est[~blocklist]['rut']].copy() # caudales mensuales de estaciones con regimen hidrologico natural
+    
+    # seleccionar estaciones con un minimo de 20 years (Quevedo, 2021)
+    estaciones_min=min_years(q_allow,minYr)
+    qmon_filtradas=q_allow.copy()[estaciones_min.index]
     
     # inicializacion de variables
     n_multivariables=4 # 4 estaciones de relleno Quevedo, 2021
