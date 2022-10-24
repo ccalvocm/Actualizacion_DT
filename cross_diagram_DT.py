@@ -47,8 +47,6 @@ est_DT02.to_pickle(r'D:\Documentos\DT\Scripts\dataframes\est_DT02.pkl') # guarda
 
 #%% diagrama de cruces estaciones DT-02
 est_DT02 = pd.read_pickle(r'D:\Documentos\DT\Scripts\dataframes\est_DT02.pkl') # cargar dataframe de estaciones DT02
-
-
 aux = est_DT02.index # extrae fechas Timestamp
 aux = aux.to_pydatetime() # convierte fechas Timestamp a datetime
 est_DT02 =  est_DT02.set_index(aux) # convierte fechas datetime a indice
@@ -60,7 +58,7 @@ plt.savefig(r'D:\Documentos\DT\Antecedentes\Caudales\diagrama_cruces_DT02_p1.svg
 
 fig = plt.figure(figsize=(11, 17))
 axes = fig.add_subplot(111)
-modules_FAA.plot_diagrama_cruces(est_DT02.iloc[:,63:124],1970,2023, ax = axes)
+modules_FAA.plot_diagrama_cruces(est_DT02.iloc[:,62:125],1970,2023, ax = axes)
 plt.savefig(r'D:\Documentos\DT\Antecedentes\Caudales\diagrama_cruces_DT02_p2.svg', bbox_inches='tight', dpi = 300)
 
 #%% diagrama de cruces estaciones interes limari

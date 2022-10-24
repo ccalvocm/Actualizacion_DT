@@ -348,16 +348,30 @@ os.path.join('..', 'SIG', 'SHACS',
     md_est.index += 1 # hacer que indice de metadata empiece desde 1
     
     md_est[['Lon','Lat']]=md_est[['Lon','Lat']].applymap(lambda x:parse_dms(x)) # convertir grados/minutos/segundos a decimal de metadata
-  
+    
+    # estaciones DT-02
+    list_DT02 = ['01210003-5','01310002-0','01310004-7','01020003-2','01502002-4','01610002-1','02104001-0','02110002-1','02112002-2','02510001-8','02500004-8','03431001-7','03814001-9','03804002-2','03820003-8','04308001-6','04311001-2','04313001-3','04320001-1','04323001-8','04501001-5','04522002-8','04514001-6','04513001-0','04533002-8','04557002-9','04703002-1','04704002-7','04712001-2','04723001-2','04716004-9','04810001-5','04901001-K','05100001-3','05101001-9','05110002-6','05120001-2','05200001-7','05410002-7','05411001-4','05414001-0','05410005-1','05423003-6','05710001-K','05717003-4','05722002-3','05722001-5','05713001-6','05734001-0','05741001-9','05735001-6','06003001-4','06006001-0','06015001-K','06018001-6','06028001-0','06027001-5','06033001-8','06043001-2','06132001-6','07102001-0','07103001-6','07112001-5','07115001-1','07116001-7','07322004-1','07372001-K','07374001-0','07355002-5','07354002-K','07350001-K','07331001-6','07330001-0','07336001-3','07341001-0','08106001-0','08112001-3','08114001-4','08117004-5','08118001-6','08130001-1','08130002-K','08117008-8','08317001-8','08323002-9','08330001-9','08332001-K','08341001-9','08351001-3','08358001-1','08380001-1','08720001-9','08821001-8','08821002-6','08821003-4','09102001-7','09104001-8','09104002-6','09106001-9','09107001-4','09123001-1','09127001-3','09131001-5','09134001-1','09404001-9','09420001-6','09434001-2','10111001-K','10134001-5','10137001-1','10311001-7','10328001-K','10411002-9','11514001-9','11505001-K','11504001-4','12284006-9','12600001-4','12622001-4','12806001-4','12802001-2','12448001-9','12582001-8','12876001-6','12284004-2']
+    q_est_DT02 = q_est.reindex(columns=list_DT02).copy() # se seleccionan solo los registros de estaciones DT02
+    f_est_DT02 = f_est.reindex(columns=list_DT02).copy() # se seleccionan solo los registros de estaciones DT02
+    md_est_DT02 = md_est.set_index('rut', drop=False).copy()
+    md_est_DT02 = md_est_DT02.reindex(list_DT02) # metadata de estaciones DT-02
+    md_est_DT02.reset_index(drop=True, inplace=True) # reinicio de indice
+    md_est_DT02.index += 1 # indice parte en 1
+    
+    
     # guardar registros consolidados de estaciones 
     q_est.to_pickle(r'D:\Documentos\DT\Scripts\dataframes\q_est.pkl')
     f_est.to_pickle(r'D:\Documentos\DT\Scripts\dataframes\f_est.pkl')
     md_est.to_pickle(r'D:\Documentos\DT\Scripts\dataframes\md_est.pkl')
+    # DT-02
+    q_est_DT02.to_pickle(r'D:\Documentos\DT\Scripts\dataframes\q_est_DT02.pkl') # guardar dataframe de estaciones DT02
+    f_est_DT02.to_pickle(r'D:\Documentos\DT\Scripts\dataframes\f_est_DT02.pkl') # guardar dataframe de estaciones DT02
+    md_est_DT02.to_pickle(r'D:\Documentos\DT\Scripts\dataframes\md_est_DT02.pkl')
  
- #%% 
+ #%% Analisis geospacial, complemento de metadata con regiones y shacs, creacion de shapefiles
     
-    q_est = pd.read_pickle(r'D:\Documentos\DT\Scripts\dataframes\q_est.pkl') # cargar dataframe de estaciones consolidados
-    f_est = pd.read_pickle(r'D:\Documentos\DT\Scripts\dataframes\f_est.pkl') # cargar dataframe de estaciones consolidados
+    # q_est = pd.read_pickle(r'D:\Documentos\DT\Scripts\dataframes\q_est.pkl') # cargar dataframe de estaciones consolidados
+    # f_est = pd.read_pickle(r'D:\Documentos\DT\Scripts\dataframes\f_est.pkl') # cargar dataframe de estaciones consolidados
     md_est = pd.read_pickle(r'D:\Documentos\DT\Scripts\dataframes\md_est.pkl') # cargar dataframe de metadata de todas las estaciones
     
     # gdf de metadata
@@ -376,19 +390,39 @@ os.path.join('..', 'SIG', 'SHACS',
     
     gdf_md = gpd.overlay(gdf_md,reg[['CUT_REG','REGION','geometry']]) # anade informacion de region a metadata estaciones
     gdf_md = gpd.overlay(gdf_md,shacs[['ID_UNICO','COD_SHAC','COD_BNA_SH','SHAC','TIPO_LIMIT','COD_BNA_AC','NOM_ACUIF','geometry']], how='union') # anade informacion de SHACs a metadata estaciones
-    
+    gdf_md.to_pickle(r'D:\Documentos\DT\Scripts\dataframes\gdf_md.pkl')
+    gdf_md.to_excel(r'D:\Documentos\DT\Scripts\dataframes\gdf_md.xlsx')
     # gdf_md.to_file(pathlib.PurePath(root,'..','SIG','Estaciones','estaciones_DGA.shp').__str__())
     
+    
+    # estaciones DT-02
+    list_DT02 = ['01210003-5','01310002-0','01310004-7','01020003-2','01502002-4','01610002-1','02104001-0','02110002-1','02112002-2','02510001-8','02500004-8','03431001-7','03814001-9','03804002-2','03820003-8','04308001-6','04311001-2','04313001-3','04320001-1','04323001-8','04501001-5','04522002-8','04514001-6','04513001-0','04533002-8','04557002-9','04703002-1','04704002-7','04712001-2','04723001-2','04716004-9','04810001-5','04901001-K','05100001-3','05101001-9','05110002-6','05120001-2','05200001-7','05410002-7','05411001-4','05414001-0','05410005-1','05423003-6','05710001-K','05717003-4','05722002-3','05722001-5','05713001-6','05734001-0','05741001-9','05735001-6','06003001-4','06006001-0','06015001-K','06018001-6','06028001-0','06027001-5','06033001-8','06043001-2','06132001-6','07102001-0','07103001-6','07112001-5','07115001-1','07116001-7','07322004-1','07372001-K','07374001-0','07355002-5','07354002-K','07350001-K','07331001-6','07330001-0','07336001-3','07341001-0','08106001-0','08112001-3','08114001-4','08117004-5','08118001-6','08130001-1','08130002-K','08117008-8','08317001-8','08323002-9','08330001-9','08332001-K','08341001-9','08351001-3','08358001-1','08380001-1','08720001-9','08821001-8','08821002-6','08821003-4','09102001-7','09104001-8','09104002-6','09106001-9','09107001-4','09123001-1','09127001-3','09131001-5','09134001-1','09404001-9','09420001-6','09434001-2','10111001-K','10134001-5','10137001-1','10311001-7','10328001-K','10411002-9','11514001-9','11505001-K','11504001-4','12284006-9','12600001-4','12622001-4','12806001-4','12802001-2','12448001-9','12582001-8','12876001-6','12284004-2']
+    gdf_md_DT02 = gdf_md.set_index('rut', drop=False).copy()
+    gdf_md_DT02 = gdf_md_DT02.reindex(list_DT02) # metadata de estaciones DT-02
+    gdf_md_DT02.reset_index(drop=True, inplace=True) # reinicio de indice
+    gdf_md_DT02.index += 1 # indice parte en 1
+    gdf_md_DT02.to_pickle(r'D:\Documentos\DT\Scripts\dataframes\gdf_md_DT02.pkl')
+    gdf_md_DT02.to_excel(r'D:\Documentos\DT\Scripts\dataframes\gdf_md_DT02.xlsx')
+    
+    #shapefiles
+    gdf_md.to_file(r'D:\Documentos\DT\SIG\Estaciones\est.shp')
+    gdf_md_DT02.to_file(r'D:\Documentos\DT\SIG\Estaciones\est_DT02.shp')
+    
+    
     #filtrar estaciones que sean canales, vertederos, desagues
-    names_blacklist=['canal','desague','vertedero','dren']
+    # names_blacklist=['canal','desague','vertedero','dren']
     
-    blacklist=md_est['Estacion'].str.lower().str.contains('|'.join(names_blacklist))
-    md_est=md_est[~blacklist]
+    # blacklist=md_est['Estacion'].str.lower().str.contains('|'.join(names_blacklist))
+    # md_est=md_est[~blacklist]
     
-    # unir region Nuble y shacs
-    shacs_inter=gpd.overlay(shacs, gpd.GeoDataFrame([],
-                                                    geometry=reg.buffer(1e3)))
+    # # unir region Nuble y shacs
+    # shacs_inter=gpd.overlay(shacs, gpd.GeoDataFrame([],
+    #                                                 geometry=reg.buffer(1e3)))
     #%%
+    gdf_md = pd.read_pickle(r'D:\Documentos\DT\Scripts\dataframes\gdf_md.pkl') # cargar geodataframe de metadata de todas las estaciones
+    gdf_md_DT02 = pd.read_pickle(r'D:\Documentos\DT\Scripts\dataframes\gdf_md_DT02.pkl') # cargar geodataframe de metadata de las estaciones DT-02
+    
+    
     shacs_reg=shacs[shacs['OBJECTID_1'].isin(shacs_inter['OBJECTID_1'])]
     
     # leer dataset CAMELS
@@ -404,8 +438,7 @@ os.path.join('..', 'SIG', 'SHACS',
     camels_fisico=parse_att_fisicos(camels)
         
     # coordenadas camels
-    coords_camels=gpd.GeoDataFrame(camels,
-    geometry=gpd.points_from_xy(x=camels['gauge_lon'],y=camels['gauge_lat']))
+    coords_camels=gpd.GeoDataFrame(camels,geometry=gpd.points_from_xy(x=camels['gauge_lon'],y=camels['gauge_lat']))
     coords_camels.set_crs(epsg='4326',inplace=True)
     coords_camels.to_crs(epsg='32719',inplace=True)
     
