@@ -514,7 +514,7 @@ os.path.join('..', 'SIG', 'SHACS',
                 
                 max_value_=x.mean()+stdOutliers*x.std()
                 
-                imp=IterativeImputer(imputation_order='ascending',random_state=0,
+                imp=IterativeImputer(imputation_order='descending',random_state=0,
             max_iter=10,min_value=0,max_value=max_value_,sample_posterior=True)
                 Y=imp.fit_transform(x)
                 Q_monthly_MLR_mes=pd.DataFrame(Y,columns=x.columns,index=x.index)
