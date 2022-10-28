@@ -43,8 +43,8 @@ def merge_dfs(df1,df2):
 def mejoresCorrelaciones(df, col, Nestaciones):
     ordenados = df.copy().sort_values(by=col, ascending = False)
     # coef. correlacion pearson 0.5
-    ordenados = ordenados[ordenados[col] >= 0.75]
-    return ordenados.index[:]
+    ordenados = ordenados[ordenados[col] >= 0.7]
+    return ordenados.index
 
 def parse_digito_verificador(lista):
     list_return=[]
