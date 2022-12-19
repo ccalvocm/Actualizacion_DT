@@ -22,20 +22,6 @@ def main():
     wait = ui.WebDriverWait(driver,2147483646)
     wait.until(EC.presence_of_element_located((By.ID, "filtroscirhform:generarxls")))
     
-    # esperar a que el usuario resuelva el reCaptcha por si cauducó de manera inesperada
-    # captcha = driver.find_element_by_css_selector('iframe[role=presentation]')
-    #
-    # wait.until(EC.visibility_of_all_elements_located((By.CLASS_NAME,'rc-anchor-error-msg')))
-    
-    
-    # wait.until(EC.text_to_be_present_in_element((By.ID, "recaptcha-accessible-status"), 'Estás verificado.'))
-    # wait.until(EC.presence_of_element_located((By.CLASS_NAME, '.rc-anchor-error-msg-container:([style*="display: none"])')))    
-    
-    # wait.until(EC.presence_of_element_located((By.CLASS_NAME, "rc-anchor-aria-status")))
-        
-    # clickear el boton si no se ha hecho
-    # wait.until(EC.element_to_be_clickable((By.CLASS_NAME, "buttonsDiv"))).click()
-    
     # parsear cookies
     cookiesSelenium=driver.get_cookies()
     cookies = {cookiesSelenium[0]['name']:cookiesSelenium[0]['value'],

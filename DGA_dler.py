@@ -11,7 +11,6 @@ import pandas as pd
 from time import sleep
 import random
 import os
-import numpy as np
 import sys
 
 #Variables globales
@@ -183,10 +182,7 @@ def main(cookies,javaxfacesViewState,region):
         pass
     
     # nombres de estaciones
-    nEstaciones = np.zeros(estCuencaQ[region,-1][0])
-    
-    for indice in range(1,len(nEstaciones)+1):
-        nEstaciones[indice-1] = 177+5*(indice-1)-min(indice-1,1)   
+    nEstaciones=[177+5*(indice-1)-min(indice-1,1) for indice in range(1,estCuencaQ[region,-1][0]+1)] 
     
     # cargar el año en que expiró la cookie, si no existe es 1972
     path_last_yr=os.path.join('.','outputs','last_year.csv')
@@ -196,7 +192,7 @@ def main(cookies,javaxfacesViewState,region):
         year_ini=1972
         
     # recorrer años
-    for yr in np.arange(year_ini,2022,4):
+    for yr in list(range(year_ini,date.today().year,4)):
         fechaini = pd.to_datetime('01/01/'+str(yr))
         if yr < date.today().year:
             fechafin = (fechaini+pd.DateOffset(years=4)-pd.DateOffset(days=1))
