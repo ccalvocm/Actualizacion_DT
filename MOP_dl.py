@@ -9,7 +9,6 @@ from time import sleep
 import random
 from bs4 import BeautifulSoup
 import pandas as pd
-import json
 import datetime
 import os
 #%% funciones
@@ -96,7 +95,6 @@ def paramsPOSTdata(estaciones,date):
         data_param['estacion'+str(ind+1)]=est
         
     return data_param
-
 
 def get_headers(cookies):
     headers = {
@@ -259,7 +257,6 @@ end='2020-12-31',closed=None))
         flags=q_est['flag']
         
         q_est_df=pd.DataFrame(caudal.values,index=fechas,columns=[est])
-        flags_est=pd.DataFrame(flags.values,index=fechas,columns=['flags'])
             
         output.loc[q_est_df.index,est]=q_est_df[est].values
         output_flag.loc[flags.index,est]=flags.values
@@ -275,18 +272,18 @@ def date_rut(rut,df_):
         return pd.to_datetime('1972-01-01')
 
 #%%
-def main():
+def main(cookies,g_recaptcha):
     
     #%% requests
     
     # inputs usuario
     
     # cookies
-    cookies="_ga_RJK2LP1D4K=GS1.1.1661345680.23.0.1661345683.0.0.0; _ga=GA1.1.15729720.1657635782; cookiesession1=074E6377BIPZXLUMRRJSUX3FNZPPF043; JSESSIONID=00007iRayYYSaIvqb5_9c1-sW3N:-1"
+    cookies="_ga_RJK2LP1D4K=GS1.1.1661435286.25.1.1661435288.0.0.0; _ga=GA1.1.15729720.1657635782; cookiesession1=252721ECIZGQZTA0MCOJEVAN9V3092AE; JSESSIONID=0000kYRhI7d8geJCr-eO8sJ6P6O:-1"
     cookiesGET=';'.join(cookies.split(';')[-2:]).strip()
     
     # recaptcha key
-    g_recaptcha='03ANYolqsaLGYCv69k4KOmooRswqClC1SBshVRRh95fmDc2fF_C_b1Av78seLT9hP4J-Mk5o6ltQV9H8lm7ZPAULwrIb-__a5tAOpqex_2dhp7RBTOjHBGfl5pRgTuvCHLPL8cJ_YsVxpTfJOAYvULkZTqkvzslN-Bsr_KPVYbnw7UXUMzb1HhZ0e2jE3AT9ql8xJc0sDgmE7LH4Ob8zhc8Qpi7EgzvxBvTETlA5tWjHgFTzAwfrdNg_QK1YAzqtR76pn5rOLRmzr8n3MyKxdDzZirK8eCABJB9JGE3WfvmpUiaIqUacTx6xZrJjDn-t08oDmn_uKB-CrcpHs9Y0u6ds16YrjohXBoJJMJtRerRVNEczrjVMPuN2j2-xvSHoT0TGXvaVkLSbbms8w6vErZTtG9NnTXdREsr8WRPl3O-7EohckUGDKIyrNMbmxJMz4TV2MPxCDfW5paWy9fUI86o9mUfTuPJngEOWupka2_NVuQjxD8qAtLXJaEXkAks9yr7vC0NVFaVdVnNS_HxqUnBx5PLw4MTV3DDA'
+    g_recaptcha='03AD1IbLBBbdC1oKimyVAlfYsd9IHMQxx-QWlj4a_fC1wQDWpGnR6WSIRo6TnRN2wuPbE9kJ4VoAfmQKAUhXTuOHZjpWbIt3f6xvBCoV_tRDFwYOLhTR9SI7GxTwHo_ULwCBfS7Ym8ZgRpb9WW-IInYl-XsTSxdD082MEeJgVmfFpf4P0Lzme8POSWo9mPl3wBtJ9QhLXi8BWP3l9YYOYp-VqLsvGGtReMkaLMNfzfY8rVFSeIs02N6ApnBMYTnMD57N7mNzS5bN_fLaO3xMBqwrdm3F_WAr4j7zTCA-OrWoPzwPezCIhwEZxjcAp2FUwjJAiYgzaWxJdpHEBIw9VGXYlxjIPwz8yCkwgo4KYIsjU5oQaZA5_UqoVfcgCX1KHFvjduhE4mZq2Dx3JGJGa4ELk_16sTUK0PPVbWS5qxze7tOuVLaAh1D1NvEFdndgYlhsjoqhwdNlBbL7gK19AzPDuIYqfrdBIfXRz2YEVu926p0iptEMp7Ql9Sk_toBlFrX8lhQjUg4CukE_MUb0udZfjt3AV3Zc6FpA'
                 
     #%% invariantes
     today=datetime.date.today().strftime("%d/%m/%Y")
@@ -300,12 +297,11 @@ def main():
     session=requests.session()
     
     # crear diccionario con las fechas de inicio
-    path_metadata=os.path.join('.','inputs','BNAT_CaudalDiario.txt')
-    df=pd.read_csv(path_metadata,sep =';',index_col=2,parse_dates=True,dayfirst=True,
-names=['rut','nombre','Q (m3/s)','flag'])
+    path_metadata=os.path.join('.','inputs','datesRuts.csv')
+    df=pd.read_csv(path_metadata,index_col=0)
     
     # ruts
-    ruts=pd.read_csv(os.path.join('.','outputs','rut_estaciones.csv'),
+    ruts=pd.read_csv(os.path.join('.','inputs','rut_estaciones.csv'),
                      names=['Rut'])
     
     # df para guardar los datos q medio, minimo y maximo 
@@ -327,7 +323,8 @@ datetime.date.today().strftime("%d-%m-%Y"),freq='1d'))
         # get first date
         if df['rut'].str.contains(rut).any():
             date_ini=max(date_rut(rut,df),date_first)
-        
+        else:
+            date_ini='2022-08-24'
         # headers
         headerParams=headersParam(cookiesGET)
 
@@ -347,16 +344,16 @@ if (any(str(x) in element['value'] for x in [rut]))]
         param_q=[x for x in parametros if 'Caudal+(m3/seg)' in x]
         
         # iterar en los años
-        for yr in range(2020,2023):
+        for yr in range(2022,2023):
                 
-            date_fin=min(pd.to_datetime(date_ini,format="%d/%m/%Y")+pd.offsets.DateOffset(years=1),
+            date_fin=min(pd.to_datetime(date_ini)+pd.offsets.DateOffset(years=1),
 pd.to_datetime(today)).strftime("%d/%m/%Y")
                     
             # POST request
-            # sleep(random.randint(60,120)) #NO CAMBIAR
+            sleep(random.randint(1,3)) #NO CAMBIAR
             # PostDATA
-            data=POSTdata(g_recaptcha,pd.to_datetime(date_ini).strftime("%d/%m/%Y"),date_fin,
-param_q,today,[rut])
+            data=POSTdata(g_recaptcha,pd.to_datetime(date_ini).strftime("%d/%m/%Y"),
+                          date_fin,param_q,today,[rut])
             
             # headers POST
             headers=get_headers(cookies=cookies)
@@ -366,7 +363,6 @@ param_q,today,[rut])
             # GET request
             headers2=headersGET(cookiesGET)
             r=requests.get(URL2,headers=headers2)
-            texto = r.text
             
             # parsear tablas con pandas
             df_yrs=parse_tables(r.text)
@@ -417,20 +413,6 @@ datetime.date.today().strftime("%d-%m-%Y"),freq='1d'),columns=stations_dr)
    
     # guardar los caudales del MOP
     df_q.to_csv(os.path.join('.','outputs','qmean_MOP_1972_2022.csv'))
-    
-def divide_chunks(l, n):
-     
-    # looping till length l
-    for i in range(0, len(l), n):
-        yield l[i:i + n]
-        
-x = list(divide_chunks(list(q_mop.columns), 20))
-
-fig,ax=plt.subplots(8,8)
-axes=ax.reshape(-1)
-
-for ind,ests in enumerate(x):
-    q_mop[ests].plot(ax=axes[ind],legend=False)
-
-if __name__=='__main__':
-    main()
+            
+# if __name__=='__main__':
+#     main()
