@@ -13,22 +13,6 @@ import random
 import os
 import sys
 
-#Variables globales
-
-'''La página necesita las Cookies de la sesión en que uno pasó el reCaptcha. 
-Pueden ir aquí o en los encabezados, pero por orden prefiero en este diccionario.
-'''
-####### CAMBIAR, una Cookie por region #######
-# inputs=pickle.load(open("inputs.pkl", "rb"))
-
-# cookies = {inputs[0][0]['name']:inputs[0][0]['value'],
-#            inputs[0][1]['name']:inputs[0][1]['value']}
-
-# # POST data de la sesión ####### CAMBIAR, un post data por region #######
-# javaxfacesViewState = inputs[1]
-# ####### Region: 1 a 15 #######
-# region = inputs[2]
-
 #%% funciones
 #Estos son los encabezados del método POST
 def get_headers():
@@ -230,6 +214,3 @@ index=None,header=None,columns=None)
                     continue
     # cuando termina, borrar el año
     os.remove(path_last_yr)
-
-# if __name__=='__main__':
-#     main(cookies,javaxfacesViewState, region)
