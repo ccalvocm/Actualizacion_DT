@@ -170,7 +170,7 @@ def CVE_pdf(df_relleno, pbbs, distr):
 
         distr_corr=distr.copy()
 
-        while (cve_pdf.loc[mes].min()<0) | (any(cve_pdf.loc[mes].diff()>0)) | (any(cve_pdf.loc[mes].isna())) | any(np.abs((cve_pdf.loc[mes]/cve_pdf.loc[mes].max()))<1e-1):
+        while (cve_pdf.loc[mes].min()<0) | (any(cve_pdf.loc[mes].diff()>0)) | (any(cve_pdf.loc[mes].isna())) | any(np.abs((cve_pdf.loc[mes]/cve_pdf.loc[mes].max()))<1e-5):
                         
             if best_fit_name=='logpearson3':
                 distr_corr.remove('logpearson3')
