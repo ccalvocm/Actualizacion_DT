@@ -19,12 +19,16 @@ def main():
     
     # esperar a que el usuario pase el reCaptcha
     wait = ui.WebDriverWait(driver,2147483646)
-    wait.until(EC.presence_of_element_located((By.ID, "captcha1")))    
+    wait.until(EC.presence_of_element_located((By.ID, "captcha1")))
+
+    # mostrar la g-recaptcha-key
+    wait.until(lambda drv: drv.find_element("id","g-recaptcha-response").get_attribute("value") != '')
+    g_recaptcha=driver.find_element("id","g-recaptcha-response").get_attribute("value")
+    # driver.execute_script('var element=document.getElementById("g-recaptcha-response"); element.style.display="";')    
     
     # parsear cookies
     cookiesSelenium=driver.get_cookies()
-    cookies = {cookiesSelenium[0]['name']:cookiesSelenium[0]['value'],
-                cookiesSelenium[1]['name']:cookiesSelenium[1]['value']}
+    cookies = cookiesSelenium[0]['name']+"="+cookiesSelenium[0]['value']+"; "+cookiesSelenium[1]['name']+"="+cookiesSelenium[1]['value']
     
     MOP_dl.main(cookies,g_recaptcha)
 

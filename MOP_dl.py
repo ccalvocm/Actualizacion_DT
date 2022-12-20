@@ -274,18 +274,7 @@ def date_rut(rut,df_):
 #%%
 def main(cookies,g_recaptcha):
     
-    #%% requests
-    
-    # inputs usuario
-    
-    # cookies
-    cookies="_ga_RJK2LP1D4K=GS1.1.1661435286.25.1.1661435288.0.0.0; _ga=GA1.1.15729720.1657635782; cookiesession1=252721ECIZGQZTA0MCOJEVAN9V3092AE; JSESSIONID=0000kYRhI7d8geJCr-eO8sJ6P6O:-1"
-    cookiesGET=';'.join(cookies.split(';')[-2:]).strip()
-    
-    # recaptcha key
-    g_recaptcha='03AD1IbLBBbdC1oKimyVAlfYsd9IHMQxx-QWlj4a_fC1wQDWpGnR6WSIRo6TnRN2wuPbE9kJ4VoAfmQKAUhXTuOHZjpWbIt3f6xvBCoV_tRDFwYOLhTR9SI7GxTwHo_ULwCBfS7Ym8ZgRpb9WW-IInYl-XsTSxdD082MEeJgVmfFpf4P0Lzme8POSWo9mPl3wBtJ9QhLXi8BWP3l9YYOYp-VqLsvGGtReMkaLMNfzfY8rVFSeIs02N6ApnBMYTnMD57N7mNzS5bN_fLaO3xMBqwrdm3F_WAr4j7zTCA-OrWoPzwPezCIhwEZxjcAp2FUwjJAiYgzaWxJdpHEBIw9VGXYlxjIPwz8yCkwgo4KYIsjU5oQaZA5_UqoVfcgCX1KHFvjduhE4mZq2Dx3JGJGa4ELk_16sTUK0PPVbWS5qxze7tOuVLaAh1D1NvEFdndgYlhsjoqhwdNlBbL7gK19AzPDuIYqfrdBIfXRz2YEVu926p0iptEMp7Ql9Sk_toBlFrX8lhQjUg4CukE_MUb0udZfjt3AV3Zc6FpA'
-                
-    #%% invariantes
+    #% invariantes
     today=datetime.date.today().strftime("%d/%m/%Y")
     
     # enlaces
@@ -326,7 +315,7 @@ datetime.date.today().strftime("%d-%m-%Y"),freq='1d'))
         else:
             date_ini='2022-08-24'
         # headers
-        headerParams=headersParam(cookiesGET)
+        headerParams=headersParam(cookies)
 
         # POST data
         data_param=paramsPOSTdata([rut],today)
@@ -361,7 +350,7 @@ pd.to_datetime(today)).strftime("%d/%m/%Y")
             r=session.post(URL,headers=headers, data=data, stream = True)
             
             # GET request
-            headers2=headersGET(cookiesGET)
+            headers2=headersGET(cookies)
             r=requests.get(URL2,headers=headers2)
             
             # parsear tablas con pandas
@@ -373,10 +362,16 @@ pd.to_datetime(today)).strftime("%d/%m/%Y")
                 df_qmean.loc[df_yrs.index,rut]=df_yrs.iloc[:,3].values
             
             date_ini=date_fin
-            
-    df_qmean.to_csv(os.path.join('.','outputs','qmean_MOP.csv'))
-    df_qmax.to_csv(os.path.join('.','outputs','qmax_MOP.csv'))
-    df_qmin.to_csv(os.path.join('.','outputs','qmin_MOP.csv'))
+    
+    # salidas
+    folder=os.path.join('.','outputs')
+    try:
+        os.makedirs(folder)
+    except:
+        pass
+    df_qmean.to_csv(os.path.join(folder,'qmean_MOP.csv'))
+    df_qmax.to_csv(os.path.join(folder,'qmax_MOP.csv'))
+    df_qmin.to_csv(os.path.join(folder,'qmin_MOP.csv'))
     
     parse_MOP(df,df_qmean)
     
