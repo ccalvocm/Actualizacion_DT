@@ -12,7 +12,6 @@ from time import sleep
 import random
 import os
 import sys
-
 #%% funciones
 #Estos son los encabezados del método POST
 def get_headers():
@@ -166,10 +165,10 @@ def main(cookies,javaxfacesViewState,region):
         pass
     
     # nombres de estaciones
-    nEstaciones=[177+5*(indice-1)-min(indice-1,1) for indice in range(1,estCuencaQ[region,-1][0]+1)] 
+    nEstaciones=[177+5*(indice-1)-min(indice-1,1) for indice in range(1,estCuencaQ[region,-1][0]+1)]
     
     # cargar el año en que expiró la cookie, si no existe es 1972
-    path_last_yr=os.path.join('.','outputs','last_year.csv')
+    path_last_yr=os.path.join('.','outputs','lastYearDGA.csv')
     if os.path.isfile(path_last_yr):
         year_ini=int(pd.read_csv(path_last_yr).columns[0])
     else:
@@ -186,18 +185,18 @@ def main(cookies,javaxfacesViewState,region):
         # descargar por estacion
         for i,x in enumerate(nEstaciones):
             estaciones = ["filtroscirhform:j_idt"+str(int(x))]
-            dictEstaciones = dict(zip(estaciones, ["on" for x in range(len(estaciones))]))
+            dictEstaciones=dict(zip(estaciones,["on" for x in range(len(estaciones))]))
                                
             data = POSTdata(region,-1,dictEstaciones,fechaini.strftime("%d/%m/%Y"),
 fechafin.strftime("%d/%m/%Y"), javaxfacesViewState)
-            sleep(random.randint(120,180)) #NO CAMBIAR
+            sleep(random.randint(61,120)) #NO CAMBIAR
             r = requests.post(URL,headers=get_headers(),cookies=cookies,
 data=data,stream=True)
             
         # chequear errores del servidor
             while any(x in r.text for x in ['Se ha producido un error en el Sistema',
 '502 Bad Gateway']):
-                sleep(random.randint(70,120)) #NO CAMBIAR
+                sleep(random.randint(61,120)) #NO CAMBIAR
                 r = requests.post(URL,headers=get_headers(),cookies=cookies,
 data=data,stream=True)
             
@@ -205,12 +204,12 @@ data=data,stream=True)
             if 'No se encontraron registros' in r.text:
                 continue
             elif '<title>MOP - Chile</title>' in r.text:
-                    pd.DataFrame([yr],columns=['Yr']).to_csv(path_last_yr,
+                    pd.DataFrame([yr]).to_csv(path_last_yr,
 index=None,header=None,columns=None)
                     sys.exit('¡Actualizar Cookies y Javax faces!, Descarga hasta '+str(fechaini))
             else:
                 with open(os.path.join(folder,'Q_'+str(region)+'_'+str(int(x))+'_'+fechaini.strftime("%d-%m-%Y")+'_'+fechafin.strftime("%d-%m-%Y")+'.xls'), 'wb') as f:
                     f.write(r.content)
                     continue
-    # cuando termina, borrar el año
-    os.remove(path_last_yr)
+    # # cuando termina, borrar el año
+    # os.remove(path_last_yr)

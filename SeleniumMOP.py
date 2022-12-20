@@ -15,6 +15,8 @@ import MOP_dl
 def main():
     # abrir la página de la DGA para parsear Cookies y postDATA
     driver = webdriver.Chrome(ChromeDriverManager().install())
+    
+    # visitar páginas
     driver.get("https://snia.mop.gob.cl/dgasat/pages/dgasat_param/dgasat_param.jsp?param=1")
     
     # esperar a que el usuario pase el reCaptcha
@@ -22,9 +24,10 @@ def main():
     wait.until(EC.presence_of_element_located((By.ID, "captcha1")))
 
     # mostrar la g-recaptcha-key
-    wait.until(lambda drv: drv.find_element("id","g-recaptcha-response").get_attribute("value") != '')
-    g_recaptcha=driver.find_element("id","g-recaptcha-response").get_attribute("value")
-    # driver.execute_script('var element=document.getElementById("g-recaptcha-response"); element.style.display="";')    
+    wait.until(lambda drv: drv.find_element("id",
+                            "g-recaptcha-response").get_attribute("value")!='')
+    g_recaptcha=driver.find_element("id",
+                                "g-recaptcha-response").get_attribute("value")
     
     # parsear cookies
     cookiesSelenium=driver.get_cookies()

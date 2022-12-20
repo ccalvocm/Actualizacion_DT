@@ -11,6 +11,7 @@ from bs4 import BeautifulSoup
 import pandas as pd
 import datetime
 import os
+import sys
 #%% funciones
 #Estos son los encabezados del método POST
 def headersParam(cookies):
@@ -245,7 +246,8 @@ def ordenarDGA(ests,df_DGA):
         DESCRIPTION.
 
     """
-    output = pd.DataFrame([], index = pd.date_range(start='1972-01-01', end='2020-12-31', closed=None))
+    output=pd.DataFrame([],index=pd.date_range(start='1972-01-01',
+                                               end='2020-12-31',closed=None))
     df_DGA.index = pd.to_datetime(df_DGA.index)
     output_flag=pd.DataFrame([],index=pd.date_range(start='1972-01-01', 
 end='2020-12-31',closed=None))
@@ -271,6 +273,8 @@ def date_rut(rut,df_):
     else:
         return pd.to_datetime('1972-01-01')
 
+def checkFile(path):
+    return os.path.isfile(path)
 #%%
 def main(cookies,g_recaptcha):
     
@@ -287,11 +291,25 @@ def main(cookies,g_recaptcha):
     
     # crear diccionario con las fechas de inicio
     path_metadata=os.path.join('.','inputs','datesRuts.csv')
-    df=pd.read_csv(path_metadata,index_col=0)
+    if checkFile(path_metadata):
+        df=pd.read_csv(path_metadata,index_col=0)
+    else:
+        sys.exit('Se necesita archivo de fechas para descargar')
     
     # ruts
-    ruts=pd.read_csv(os.path.join('.','inputs','rut_estaciones.csv'),
-                     names=['Rut'])
+    path_ruts=os.path.join('.','inputs','rut_estaciones.csv')
+    if checkFile(path_ruts):
+        ruts=pd.read_csv(path_ruts,names=['Rut'])
+    else:
+        sys.exit('Se necesita archivo de estaciones para descargar')
+    
+    # leer fecha inicial
+    path_last_yr=os.path.join('.','outputs','lastYearMOP.csv')
+    if checkFile(path_last_yr):
+        date_user=pd.to_datetime('01-01-'+str(pd.read_csv(path_last_yr).columns[0]),
+                                format='%d-%m-%Y')
+    else:
+        date_user=pd.to_datetime('01-01-1972',format='%d-%m-%Y')
     
     # df para guardar los datos q medio, minimo y maximo 
     df_qmean=pd.DataFrame(index=pd.date_range('01-01-1972',
@@ -302,18 +320,16 @@ datetime.date.today().strftime("%d-%m-%Y"),freq='1d'))
     
     df_qmax=pd.DataFrame(index=pd.date_range('01-01-1972',
 datetime.date.today().strftime("%d-%m-%Y"),freq='1d'))
-
-    # dia inicial si no existen datos de la estacion
-    date_first=pd.to_datetime('1972-01-01')
         
     # iterar en las estaciones
     for rut in ruts['Rut']:
         
         # get first date
         if df['rut'].str.contains(rut).any():
-            date_ini=max(date_rut(rut,df),date_first)
+            print()
+            date_ini=max(date_rut(rut,df),date_user)
         else:
-            date_ini='2022-08-24'
+            date_ini=date_user
         # headers
         headerParams=headersParam(cookies)
 
@@ -327,13 +343,14 @@ datetime.date.today().strftime("%d-%m-%Y"),freq='1d'))
             print('Error 500')
             break
             
-        soup = BeautifulSoup(response.text, "html.parser")
+        soup=BeautifulSoup(response.text, "html.parser")
         parametros=[element['value'].replace(' ','+') for element in soup.find_all('input')
 if (any(str(x) in element['value'] for x in [rut]))]
         param_q=[x for x in parametros if 'Caudal+(m3/seg)' in x]
         
         # iterar en los años
-        for yr in range(2022,2023):
+        for yr in range(pd.to_datetime(date_ini,format='%d/%m/%Y').year,
+                        int(datetime.date.today().year)+1):
                 
             date_fin=min(pd.to_datetime(date_ini)+pd.offsets.DateOffset(years=1),
 pd.to_datetime(today)).strftime("%d/%m/%Y")
