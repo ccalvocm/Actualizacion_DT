@@ -247,10 +247,10 @@ def ordenarDGA(ests,df_DGA):
 
     """
     output=pd.DataFrame([],index=pd.date_range(start='1972-01-01',
-                                               end='2020-12-31',closed=None))
+                                               end='2020-12-31',inclusive='right'))
     df_DGA.index = pd.to_datetime(df_DGA.index)
     output_flag=pd.DataFrame([],index=pd.date_range(start='1972-01-01', 
-end='2020-12-31',closed=None))
+end='2020-12-31',inclusive='right'))
 
     for ind,est in enumerate(ests):
         q_est=df_DGA[df_DGA['rut'] == ests[ind]]
@@ -267,19 +267,19 @@ end='2020-12-31',closed=None))
 
 def date_rut(rut,df_):
     date_first=df_[df_['rut']==rut].index
-    if len(date_first)>1:
+    if len(date_first)>=1:
         idx=date_first[-1]
-        return idx
+        return  pd.to_datetime(idx,format='%Y-%m-%d')
     else:
-        return pd.to_datetime('1972-01-01')
-
+        return pd.to_datetime('01-01-1972',format='%d-%m-%Y')
+    
 def checkFile(path):
     return os.path.isfile(path)
 #%%
 def main(cookies,g_recaptcha):
     
     #% invariantes
-    today=datetime.date.today().strftime("%d/%m/%Y")
+    today=datetime.date.today()
     
     # enlaces
     URLParam='https://snia.mop.gob.cl/dgasat/pages/dgasat_param/dgasat_param_1.jsp'
@@ -306,27 +306,23 @@ def main(cookies,g_recaptcha):
     # leer fecha inicial
     path_last_yr=os.path.join('.','outputs','lastYearMOP.csv')
     if checkFile(path_last_yr):
-        date_user=pd.to_datetime('01-01-'+str(pd.read_csv(path_last_yr).columns[0]),
-                                format='%d-%m-%Y')
+        date_user=pd.to_datetime('01-01-'+str(int(pd.read_csv(path_last_yr).columns[0])),
+                                 format='%d-%m-%Y')
     else:
         date_user=pd.to_datetime('01-01-1972',format='%d-%m-%Y')
     
     # df para guardar los datos q medio, minimo y maximo 
-    df_qmean=pd.DataFrame(index=pd.date_range('01-01-1972',
-datetime.date.today().strftime("%d-%m-%Y"),freq='1d'))
+    df_qmean=pd.DataFrame(index=pd.date_range('01-01-1972',today,freq='1d'))
 
-    df_qmin=pd.DataFrame(index=pd.date_range('01-01-1972',
-datetime.date.today().strftime("%d-%m-%Y"),freq='1d'))
+    df_qmin=pd.DataFrame(index=pd.date_range('01-01-1972',today,freq='1d'))
     
-    df_qmax=pd.DataFrame(index=pd.date_range('01-01-1972',
-datetime.date.today().strftime("%d-%m-%Y"),freq='1d'))
+    df_qmax=pd.DataFrame(index=pd.date_range('01-01-1972',today,freq='1d'))
         
     # iterar en las estaciones
     for rut in ruts['Rut']:
         
         # get first date
         if df['rut'].str.contains(rut).any():
-            print()
             date_ini=max(date_rut(rut,df),date_user)
         else:
             date_ini=date_user
@@ -334,14 +330,17 @@ datetime.date.today().strftime("%d-%m-%Y"),freq='1d'))
         headerParams=headersParam(cookies)
 
         # POST data
-        data_param=paramsPOSTdata([rut],today)
+        data_param=paramsPOSTdata([rut],today.strftime("%d/%m/%Y"))
         
         response=requests.post(URLParam,headers=headerParams,data=data_param,
     stream=True)
         
-        if 'Error 500' in response.text:
-            print('Error 500')
-            break
+        # chequear errores del servidor
+        while any(x in response.text for x in ['Error 500',
+                'Se ha producido un error en el Sistema','502 Bad Gateway']):
+            sleep(random.randint(21,60)) #NO CAMBIAR
+            response=requests.post(URLParam,headers=headerParams,
+                                   data=data_param,stream=True)
             
         soup=BeautifulSoup(response.text, "html.parser")
         parametros=[element['value'].replace(' ','+') for element in soup.find_all('input')
@@ -349,17 +348,15 @@ if (any(str(x) in element['value'] for x in [rut]))]
         param_q=[x for x in parametros if 'Caudal+(m3/seg)' in x]
         
         # iterar en los años
-        for yr in range(pd.to_datetime(date_ini,format='%d/%m/%Y').year,
-                        int(datetime.date.today().year)+1):
+        for yr in range(date_ini.year,int(datetime.date.today().year)+1):
                 
-            date_fin=min(pd.to_datetime(date_ini)+pd.offsets.DateOffset(years=1),
-pd.to_datetime(today)).strftime("%d/%m/%Y")
+            date_fin=min(date_ini+pd.offsets.DateOffset(years=1),pd.to_datetime(today))
                     
             # POST request
             sleep(random.randint(1,3)) #NO CAMBIAR
             # PostDATA
             data=POSTdata(g_recaptcha,pd.to_datetime(date_ini).strftime("%d/%m/%Y"),
-                          date_fin,param_q,today,[rut])
+                          date_fin.strftime("%d/%m/%Y"),param_q,today,[rut])
             
             # headers POST
             headers=get_headers(cookies=cookies)
@@ -399,11 +396,11 @@ def parse_MOP(df_,df_qmean_):
     
     # crear df para guardar
     df_q=pd.DataFrame(index=pd.date_range('01-01-1972',
-datetime.date.today().strftime("%d-%m-%Y"),freq='1d'),columns=stations_dr)
+datetime.date.today(),freq='1d'),columns=stations_dr)
     
     # parsear los caudales originales de la DGA de los ultimos 50 años
-    df_q50=df_.loc[df_.index>='1972-01-01']
-    df_parsed,flags_parsed=ordenarDGA(stations_dr,df_q50)
+    # df_q50=df_.loc[df_.index>='1972-01-01']
+    # df_parsed,flags_parsed=ordenarDGA(stations_dr,df_q50)
     
     for est in df_qmean_.columns:
         qmean_est=df_qmean_[est].copy()
@@ -414,17 +411,18 @@ datetime.date.today().strftime("%d-%m-%Y"),freq='1d'),columns=stations_dr)
         # guardar los valores nuevos not nan
         df_q.loc[qmean_est_nna.index,qmean_est_nna.name]=qmean_est_nna.values        
    
-    for est in df_parsed.columns:
-        qmean_est=df_parsed[est]
+    # for est in df_parsed.columns:
+    #     qmean_est=df_parsed[est]
         
-        # remover los nan
-        qmean_est_nna=qmean_est[qmean_est.notna()]
+    #     # remover los nan
+    #     qmean_est_nna=qmean_est[qmean_est.notna()]
         
-        # guardar los valores nuevos not nan
-        df_q.loc[qmean_est_nna.index,qmean_est_nna.name]=qmean_est_nna.values   
+    #     # guardar los valores nuevos not nan
+    #     df_q.loc[qmean_est_nna.index,qmean_est_nna.name]=qmean_est_nna.values   
    
     # guardar los caudales del MOP
-    df_q.to_csv(os.path.join('.','outputs','qmean_MOP_1972_2022.csv'))
+    df_q.dropna(how='all',axis=1).dropna(how='all',axis=0).to_csv(os.path.join('.',
+'outputs','qmean_MOP_'+str(datetime.date.today().year)+'.csv'))
             
 # if __name__=='__main__':
 #     main()
