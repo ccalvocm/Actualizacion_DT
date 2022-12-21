@@ -43,8 +43,8 @@ def merge_dfs(df1,df2):
 def mejoresCorrelaciones(df, col, Nestaciones):
     ordenados = df.copy().sort_values(by=col, ascending = False)
     # coef. correlacion pearson 0.5
-    ordenados = ordenados[ordenados[col] >= 0.75]
-    return ordenados.index[:]
+    ordenados = ordenados[ordenados[col] >= 0.7]
+    return ordenados.index
 
 def parse_digito_verificador(lista):
     list_return=[]
@@ -514,8 +514,8 @@ os.path.join('..', 'SIG', 'SHACS',
                 
                 max_value_=x.mean()+stdOutliers*x.std()
                 
-                imp=IterativeImputer(imputation_order='ascending',random_state=0,
-            max_iter=10,min_value=0,max_value=max_value_,sample_posterior=True)
+                imp=IterativeImputer(imputation_order='descending',random_state=0,
+            max_iter=20,min_value=0,max_value=max_value_,sample_posterior=False,initial_strategy='median',skip_complete=True)
                 Y=imp.fit_transform(x)
                 Q_monthly_MLR_mes=pd.DataFrame(Y,columns=x.columns,index=x.index)
                 Q_monthly_MLR_mes=Q_monthly_MLR_mes.dropna()

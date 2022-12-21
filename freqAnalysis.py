@@ -128,7 +128,7 @@ def CVE_pdf(df_relleno, pbbs, distr):
     cve_pdf : DataFrame
         Curva de variación estacional usando la distribución de probabilidad ajustada.
 
-    '''
+    '''        
 
     # -------------------------------------------------------------------------
     # distribuciones
@@ -144,6 +144,11 @@ def CVE_pdf(df_relleno, pbbs, distr):
         [], index=[4, 5, 6, 7, 8, 9, 10, 11, 12, 1, 2, 3], columns=pbbs)
 
     for mes in range(1, 13):
+        
+        # Rio Laja en Tucapel
+        if df_relleno.columns.str.contains('Laja En Tucapel 2'):
+            distr=[x for x in distr if x not in [st.pearson3]]
+        
         data = pd.DataFrame(
             df_relleno[df_relleno.index.month == mes].values.ravel())
         best_fit_name, best_fit_params = best_fit_distribution(
@@ -153,7 +158,7 @@ def CVE_pdf(df_relleno, pbbs, distr):
         arg=best_fit_params[:-2]
         loc=best_fit_params[-2]
         scale=best_fit_params[-1]
-
+        
         # aca se calcularse todas las pbb y no iterar
         if best_fit_name == 'logpearson3':
             best_dist = getattr(st, 'pearson3')
@@ -172,7 +177,16 @@ def CVE_pdf(df_relleno, pbbs, distr):
             else:
                 distr_corr.remove(best_dist)
                 
-            best_fit_name, best_fit_params=best_fit_distribution(data, bins,
+            if mes==11:
+                # Ñuble en San Fabián
+                if df_relleno.columns.str.contains('San Fabian'):
+                    try:
+                        distr_corr=[x for x in distr_corr if x not in [st.pearson3,
+                                                                st.gumbel_l]]
+                    except:
+                        pass
+                                                
+            best_fit_name,best_fit_params=best_fit_distribution(data, bins,
                                                                    distr_corr)
 
             # Separate parts of parameters

@@ -31,11 +31,12 @@ def runoff(cuenca):
     # graciar hidrogramas
     caudales_nam=modules_CCC.get_names(caudales,metadata_cuenca[['Estacion',
                                                                'rut']])
-    caudales_nam=caudales_nam.loc[caudales_nam.index<='2000-03-01']
+    caudales_nam=caudales_nam.loc[(caudales_nam.index>='1971-04-01') & (caudales_nam.index<='2022-03-31')]
+    # caudales_nam=caudales_nam.loc[caudales_nam.index<='2000-03-01']
     plt.close('all')
     
     # crear archivo para guardar estaciones
-    save_path=os.path.join('.','outputs','CVE_1950-2000_caudales_'+cuenca+'.xlsx')
+    save_path=os.path.join('.','outputs','CVE_1971-2022_caudales_'+cuenca+'.xlsx')
     writer=pd.ExcelWriter(save_path, engine='xlsxwriter')
     
     for i in range(2,len(caudales_nam.columns)+2,2):
