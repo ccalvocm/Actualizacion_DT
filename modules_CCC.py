@@ -210,7 +210,7 @@ def CVE_1979_2019(file, fig, axes, ene, flag):
 #  ruta_Q_rellenos = r'../Etapa 1 y 2/datos/'+file
   import freqAnalysis
 
-  probabilidades_excedencia = [.2, .5, .85, .9,.95]
+  probabilidades_excedencia = [.05, .1, .2, .5, .85, .9,.95]
   
 #  Q_relleno = pd.read_csv(ruta_Q_rellenos, index_col = 0,parse_dates=True)
   Q_relleno = file
@@ -297,7 +297,7 @@ def CVE_mon(Q_relleno,fig,axes,ene,year_i,year_f,cuenca,writer):
   import freqAnalysis
 
   # probabilidades de excedencia y distribuciones
-  probabilidades_excedencia=[.2,.5,.85,.9,.95]
+  probabilidades_excedencia=[.05, .1, .2,.5,.85,.9,.95]
   distr=[st.norm,st.lognorm,st.gumbel_l,st.gumbel_r,st.pearson3,'logpearson3']  
   
   ini = pd.to_datetime(str(year_i)+'-04-01',format='%Y-%m-%d')

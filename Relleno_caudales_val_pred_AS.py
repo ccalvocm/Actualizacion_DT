@@ -381,15 +381,21 @@ os.path.join('..', 'SIG', 'SHACS',
 
     # region y shacs
     ruta_reg=pathlib.PurePath('..','SIG','Base','REGIONES_2020.shp')
+    ruta_bna=pathlib.PurePath('..','SIG','Cuencas','Cuencas_BNA.shp')
     path_shac=pathlib.PurePath('..', 'SIG', 'SHACS','Acuiferos_SHAC_Julio_2022.shp')
     
     shacs=gpd.read_file(path_shac.__str__())
     reg=gpd.read_file(ruta_reg.__str__())     
     reg.set_crs(epsg='5360',inplace=True)
     reg.to_crs(epsg='32719',inplace=True)
+    bna=gpd.read_file(ruta_bna.__str__())     
     
     gdf_md = gpd.overlay(gdf_md,reg[['CUT_REG','REGION','geometry']]) # anade informacion de region a metadata estaciones
-    gdf_md = gpd.overlay(gdf_md,shacs[['ID_UNICO','COD_SHAC','COD_BNA_SH','SHAC','TIPO_LIMIT','COD_BNA_AC','NOM_ACUIF','geometry']], how='union') # anade informacion de SHACs a metadata estaciones
+    gdf_md = gpd.overlay(gdf_md,bna[['COD_CUEN','NOM_CUEN','geometry']]) # anade informacion de cuencas BNA
+    gdf_md = gpd.overlay(gdf_md,shacs[['ID_UNICO','COD_SHAC','COD_BNA_SH','SHAC','TIPO_LIMIT','COD_BNA_AC','NOM_ACUIF','geometry']]) # anade informacion de SHACs a metadata estaciones
+    
+    gdf_md = gdf_md[['Estacion', 'Lat', 'Lon', 'Altura','COD_CUEN', 'NOM_CUEN', 'Subcuenca', 'rut','Este', 'Norte', 'CUT_REG', 'REGION', 'ID_UNICO', 'COD_SHAC', 'COD_BNA_SH', 'SHAC', 'TIPO_LIMIT', 'COD_BNA_AC', 'NOM_ACUIF' , 'geometry']]
+    gdf_md.rename(columns={'COD_CUEN' : 'COD_BNA', 'NOM_CUEN' : 'Cuenca'},inplace=True)
     gdf_md.to_pickle(r'D:\Documentos\DT\Scripts\dataframes\gdf_md.pkl')
     gdf_md.to_excel(r'D:\Documentos\DT\Scripts\dataframes\gdf_md.xlsx')
     # gdf_md.to_file(pathlib.PurePath(root,'..','SIG','Estaciones','estaciones_DGA.shp').__str__())
@@ -439,8 +445,7 @@ os.path.join('..', 'SIG', 'SHACS',
     coords_camels.to_crs(epsg='32719',inplace=True)
     
     # normalizar cada columna de los atributos fisicos
-    camels_fisic_norm=camels_fisico.apply(lambda x: np.abs((x-x.mean())/x.std()),
-                                                           axis=0)
+    camels_fisic_norm=camels_fisico.apply(lambda x: np.abs((x-x.mean())/x.std()),axis=0)
     camels_fisic_norm=camels_fisic_norm.apply(lambda x: x/x.max(),axis=0)
     
     #%% Caudales mensuales
@@ -528,18 +533,21 @@ os.path.join('..', 'SIG', 'SHACS',
     md_est = pd.read_pickle(r'D:\Documentos\DT\Scripts\dataframes\md_est.pkl') # cargar dataframe de metadata de todas las estaciones
     gdf_md = pd.read_pickle(r'D:\Documentos\DT\Scripts\dataframes\gdf_md.pkl') # cargar geodataframe de metadata de todas las estaciones
     gdf_md_DT02 = pd.read_pickle(r'D:\Documentos\DT\Scripts\dataframes\gdf_md_DT02.pkl') # cargar geodataframe de metadata de las estaciones DT-02
-
     
-    # filtrado de estaciones validas para rellenar
+    # Estaciones que se van a rellenar
+    est=gdf_md_DT02['rut']
+    
+    # filtrado de estaciones validas para utilizar en relleno
     
     # names_blocklist=['acueducto','can ', 'canal', 'captacion', 'desague', 'dren']
-    names_blocklist=['acueducto','can ', 'canal', 'dren']
+    names_blocklist=['acueducto','can ', 'canal', 'desague', 'dren']
     blocklist = md_est['Estacion'].str.lower().str.startswith(tuple(names_blocklist)) # filtra estaciones que no tienen un regimen hidrologico natural
-    q_allow = q_mon[md_est[~blocklist]['rut']].copy() # caudales mensuales de estaciones con regimen hidrologico natural
+    mustlist = md_est['rut'].isin(set(est)) # forzar inclusion de estaciones de interes
+    q_allow = q_mon[md_est[~blocklist | mustlist]['rut']].copy() # caudales mensuales de estaciones con regimen hidrologico natural
     
     # seleccionar estaciones con un minimo de 20 years (Quevedo, 2021)
     estaciones_min=min_years(q_allow,minYr)
-    qmon_filtradas=q_allow.copy()[estaciones_min.index]
+    qmon_filtradas=q_allow.copy()[estaciones_min.index.union(est)] # estaciones con suficientes datos y estaciones de interes
     
     # inicializacion de variables
     n_multivariables=4 # 4 estaciones de relleno Quevedo, 2021
@@ -555,8 +563,8 @@ os.path.join('..', 'SIG', 'SHACS',
     q_mon_MLR=q_mon_MLR.astype(float)
     
     # Multivariable
-    # rellenar estaciones en shacs
-    estaciones=qmon_filtradas.columns.intersection(est_utm_shac['rut'])
+    # rellenar estaciones de interes
+    estaciones=qmon_filtradas.columns.intersection(est)
     
     df_check=q_mon_MLR[estaciones].copy()
     
@@ -573,13 +581,12 @@ os.path.join('..', 'SIG', 'SHACS',
                 
                 # obtener estaciones con similitud fisica
                 # pueden haber estaciones fuera de los shacs segun Quevedo, 2021
-                est_similares=similitud_fisica(col,camels_fisic_norm,
-                                               gdf_metadata,coords_camels).index         
+                est_similares=similitud_fisica(col,camels_fisic_norm,gdf_md,coords_camels).index         
     
                 # similitud hidrológica
                 correl=q_mon_mes.astype(float).corr()
-                coord_est=gdf_metadata[gdf_metadata['rut']==col].geometry
-                est_near=min_dist(coord_est.geometry,gdf_metadata, -1)
+                coord_est=gdf_md[gdf_md['rut']==col].geometry
+                est_near=min_dist(coord_est.geometry,gdf_md, -1)
                 idx=q_mon_mes.columns.intersection(list(est_near['rut']))
                 est_indep=mejoresCorrelaciones(correl.loc[list(idx)],col, -1)
 
@@ -589,9 +596,8 @@ os.path.join('..', 'SIG', 'SHACS',
                 est_indep=list(est_indep[:n_multivariables])+[col]
                 est_indep=list(set(est_indep))
                 if col in ['04522001-K','04531001-9','04535002-9','04506002-0','04550003-9']:
-                    print(metadata[metadata['rut'].isin(est_indep)]['Estacion'].values)
-                x=pd.DataFrame(q_mon_mes.loc[q_mon_mes.index.month==mes][est_indep].copy(),
-                                                                   dtype=float)
+                    print(md_est[md_est['rut'].isin(est_indep)]['Estacion'].values)
+                x=pd.DataFrame(q_mon_mes.loc[q_mon_mes.index.month==mes][est_indep].copy(),dtype=float)
                 
                 x=x.dropna(how='all',axis=1)
                 
@@ -607,7 +613,7 @@ os.path.join('..', 'SIG', 'SHACS',
                               col]=Q_monthly_MLR_mes[col].values
                 df_check=q_mon_MLR[estaciones].copy()
 #%% guardar registros de estaciones rellenadas en pickle
-    q_mon_MLR.to_pickle(pathlib.PurePath(root,'..','Scripts','outputs','dataframes','qmon_MLR_Coq_1950_2022.pkl'))
+    q_mon_MLR[est].to_pickle(pathlib.PurePath(root,'..','Scripts','outputs','dataframes','qmon_MLR_DT-02_1950_2022.pkl'))
 
                 
 #%% plots para presentación
