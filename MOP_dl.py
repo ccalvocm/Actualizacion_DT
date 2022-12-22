@@ -229,7 +229,7 @@ def parse_rut(sopa):
     
     return rut_estacion
 
-def ordenarDGA(ests,df_DGA):
+def ordenarDGA(ests,df_DGA,lastYear):
     """
     
 
@@ -246,10 +246,10 @@ def ordenarDGA(ests,df_DGA):
         DESCRIPTION.
 
     """
-    output=pd.DataFrame([],index=pd.date_range(start='1972-01-01',
+    output=pd.DataFrame([],index=pd.date_range(start=str(lastYear)+'-01-01',
                                                end='2020-12-31',inclusive='right'))
     df_DGA.index = pd.to_datetime(df_DGA.index)
-    output_flag=pd.DataFrame([],index=pd.date_range(start='1972-01-01', 
+    output_flag=pd.DataFrame([],index=pd.date_range(start=str(lastYear)+'-01-01', 
 end='2020-12-31',inclusive='right'))
 
     for ind,est in enumerate(ests):
@@ -265,13 +265,13 @@ end='2020-12-31',inclusive='right'))
 
     return output,output_flag  
 
-def date_rut(rut,df_):
+def date_rut(rut,df_,lastYear):
     date_first=df_[df_['rut']==rut].index
     if len(date_first)>=1:
         idx=date_first[-1]
         return  pd.to_datetime(idx,format='%Y-%m-%d')
     else:
-        return pd.to_datetime('01-01-1972',format='%d-%m-%Y')
+        return pd.to_datetime('01-01-'+str(lastYear),format='%d-%m-%Y')
     
 def checkFile(path):
     return os.path.isfile(path)
@@ -306,24 +306,24 @@ def main(cookies,g_recaptcha):
     # leer fecha inicial
     path_last_yr=os.path.join('.','outputs','lastYearMOP.csv')
     if checkFile(path_last_yr):
-        date_user=pd.to_datetime('01-01-'+str(int(pd.read_csv(path_last_yr).columns[0])),
-                                 format='%d-%m-%Y')
+        lastYear=int(pd.read_csv(path_last_yr).columns[0])
     else:
-        date_user=pd.to_datetime('01-01-1972',format='%d-%m-%Y')
-    
+        lastYear=1972
+    date_user=pd.to_datetime('01-01-'+str(lastYear),
+                                 format='%d-%m-%Y')    
     # df para guardar los datos q medio, minimo y maximo 
-    df_qmean=pd.DataFrame(index=pd.date_range('01-01-1972',today,freq='1d'))
+    df_qmean=pd.DataFrame(index=pd.date_range('01-01-'+str(lastYear),today,freq='1d'))
 
-    df_qmin=pd.DataFrame(index=pd.date_range('01-01-1972',today,freq='1d'))
+    df_qmin=pd.DataFrame(index=pd.date_range('01-01-'+str(lastYear),today,freq='1d'))
     
-    df_qmax=pd.DataFrame(index=pd.date_range('01-01-1972',today,freq='1d'))
+    df_qmax=pd.DataFrame(index=pd.date_range('01-01-'+str(lastYear),today,freq='1d'))
         
     # iterar en las estaciones
     for rut in ruts['Rut']:
         
         # get first date
         if df['rut'].str.contains(rut).any():
-            date_ini=max(date_rut(rut,df),date_user)
+            date_ini=max(date_rut(rut,df),date_user,lastYear)
         else:
             date_ini=date_user
         # headers
@@ -387,15 +387,15 @@ if (any(str(x) in element['value'] for x in [rut]))]
     df_qmax.to_csv(os.path.join(folder,'qmax_MOP.csv'))
     df_qmin.to_csv(os.path.join(folder,'qmin_MOP.csv'))
     
-    parse_MOP(df,df_qmean)
+    parse_MOP(df,df_qmean,lastYear)
     
-def parse_MOP(df_,df_qmean_):
+def parse_MOP(df_,df_qmean_,lastYear):
     # obtener estaciones totales
     stations=list(df_['rut'].unique())+list(df_qmean_.columns)
     stations_dr=list(dict.fromkeys(stations))
     
     # crear df para guardar
-    df_q=pd.DataFrame(index=pd.date_range('01-01-1972',
+    df_q=pd.DataFrame(index=pd.date_range(str(lastYear)+'-01-01',
 datetime.date.today(),freq='1d'),columns=stations_dr)
     
     # parsear los caudales originales de la DGA de los ultimos 50 años
