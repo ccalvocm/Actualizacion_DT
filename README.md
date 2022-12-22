@@ -7,8 +7,9 @@
 Descargar el archivo https://github.com/ccalvocm/Actualizacion_DT/blob/main/DMDownloader.zip?raw=true
 
 #### Descarga de registros fluviométricos de la DGA:
-- Descomprimir el archivo .zip en su computador y ejectutar SeleniumDGA.exe
+- Descomprimir el archivo .zip en su computador
 - Modificar el archivo de la carpeta "outputs/lastYearDGA.csv" e ingresar el año desde el cual se requiere bajar información.
+- Ejectutar SeleniumDGA.exe
 - En la ventana emergente:
     * Seleccionar "Reportes Fluviométricos" 
     * Seleccionar "Caudales Medios Diarios"
@@ -17,8 +18,9 @@ Descargar el archivo https://github.com/ccalvocm/Actualizacion_DT/blob/main/DMDo
 - Esperar. Los resultados se descargarán en la carpeta "outputs" ubicada donde ejecutaron SeleniumDGA.exe
 
 #### Descarga de registros fluviométricos del MOP:
-- Descomprimir el archivo .zip en su computador y ejectutar SeleniumMOP.exe
+- Descomprimir el archivo .zip en su computador
 - Modificar el archivo de la carpeta "outputs/lastYearMOP.csv" e ingresar el año desde el cual se requiere bajar información.
+- Ejectutar SeleniumMOP.exe
 - En la ventana emergente:
     * Seleccionar cualquier estación en el menú "- Seleccione Estación 1 -" 
     * Seleccionar "Ver Parámetros"
