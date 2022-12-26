@@ -312,11 +312,14 @@ def main(cookies,g_recaptcha):
     date_user=pd.to_datetime('01-01-'+str(lastYear),
                                  format='%d-%m-%Y')    
     # df para guardar los datos q medio, minimo y maximo 
-    df_qmean=pd.DataFrame(index=pd.date_range('01-01-'+str(lastYear),today,freq='1d'))
+    df_qmean=pd.DataFrame(index=pd.date_range('01-01-'+str(lastYear),today,
+                                              freq='1d'))
 
-    df_qmin=pd.DataFrame(index=pd.date_range('01-01-'+str(lastYear),today,freq='1d'))
+    df_qmin=pd.DataFrame(index=pd.date_range('01-01-'+str(lastYear),today,
+                                             freq='1d'))
     
-    df_qmax=pd.DataFrame(index=pd.date_range('01-01-'+str(lastYear),today,freq='1d'))
+    df_qmax=pd.DataFrame(index=pd.date_range('01-01-'+str(lastYear),today,
+                                             freq='1d'))
         
     # iterar en las estaciones
     for rut in ruts['Rut']:
