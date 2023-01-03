@@ -4,7 +4,7 @@
 
 ### Instrucciones de la herramienta de descarga de caudales medios diarios de la DGA y MOP
 
-Descargar el archivo https://github.com/ccalvocm/Actualizacion_DT/raw/main/DMDownloader.zip
+Descargar el archivo https://github.com/ccalvocm/Actualizacion_DT/blob/main/DGAMOPdownloader.zip?raw=true
 
 #### Descarga de registros fluviométricos de la DGA:
 - Descomprimir el archivo .zip en su computador
