@@ -326,7 +326,7 @@ def main(cookies,g_recaptcha):
         
         # get first date
         if df['rut'].str.contains(rut).any():
-            date_ini=max(date_rut(rut,df),date_user,lastYear)
+            date_ini=max(date_rut(rut,df,lastYear),date_user)
         else:
             date_ini=date_user
         # headers

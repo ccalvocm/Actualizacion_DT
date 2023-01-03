@@ -34,7 +34,7 @@ def main():
     javaxFaces=soup.find('input', {'name':'javax.faces.ViewState'})['value']
     
     # parsear region
-    leftString=pageSource.index('" selected="selected">')-4
+    leftString=pageSource.index('" selected="selected">')-3
     rightString=pageSource.index('" selected="selected">')
     reg=pageSource[leftString:rightString].replace('"','').replace('=','').replace(' ','')
     
