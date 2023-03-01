@@ -7,7 +7,7 @@ import modules_CCC
 import matplotlib.pyplot as plt
 import pathlib
 
-os.chdir(r'D:\Documentos\Github\Actualizacion_DT')
+os.chdir(r'E:\GitHub\Actualizacion_DT')
 ruta_ip = pathlib.PurePath('inputs') # ruta inputs
 ruta_op = pathlib.PurePath('outputs') # ruta outputs
 # df con Estaciones
@@ -31,7 +31,7 @@ plt.close('all')
 # crear archivo para guardar estaciones
 save_path=ruta_op.joinpath('CVE_1950-2000_caudales_Limari-DT02.xlsx')
 writer=pd.ExcelWriter(save_path, engine='xlsxwriter')
-cuenca = 'Valdivia'
+cuenca = 'Limari'
 
 for i in range(len(caudales_nam.columns)):
     q_nam = pd.DataFrame(caudales_nam.loc[(caudales_nam.index>='1950-04-01') & (caudales_nam.index<'2001-03-31')][caudales_nam.columns[i]])
@@ -51,10 +51,50 @@ plt.close('all')
 # crear archivo para guardar estaciones
 save_path=ruta_op.joinpath('CVE_1971-2021_caudales_Limari-DT02.xlsx')
 writer=pd.ExcelWriter(save_path, engine='xlsxwriter')
-cuenca = 'Valdivia'
+cuenca = 'Limari'
 
 for i in range(len(caudales_nam.columns)):
     q_nam = pd.DataFrame(caudales_nam.loc[(caudales_nam.index>='1971-04-01') & (caudales_nam.index<'2022-03-31')][caudales_nam.columns[i]])
+    fig, axes=plt.subplots(2,1,figsize=(11, 17))
+    axes=axes.reshape(-1)
+    modules_CCC.CVE_mon(q_nam,fig,axes,2,q_nam.index.year[0],q_nam.index.year[-1],cuenca,writer)
+    plt.show()
+    
+writer.save()
+writer.close()
+
+#---------------------------------1991-2021-----------------------------
+
+caudales_nam=modules_CCC.get_names(caudales,metadata_cuenca[['Estacion','rut']])
+plt.close('all')
+
+# crear archivo para guardar estaciones
+save_path=ruta_op.joinpath('CVE_1991-2021_caudales_Limari-DT02.xlsx')
+writer=pd.ExcelWriter(save_path, engine='xlsxwriter')
+cuenca = 'Limari'
+
+for i in range(len(caudales_nam.columns)):
+    q_nam = pd.DataFrame(caudales_nam.loc[(caudales_nam.index>='1991-04-01') & (caudales_nam.index<'2022-03-31')][caudales_nam.columns[i]])
+    fig, axes=plt.subplots(2,1,figsize=(11, 17))
+    axes=axes.reshape(-1)
+    modules_CCC.CVE_mon(q_nam,fig,axes,2,q_nam.index.year[0],q_nam.index.year[-1],cuenca,writer)
+    plt.show()
+    
+writer.save()
+writer.close()     
+
+#---------------------------------2006-2021-----------------------------
+
+caudales_nam=modules_CCC.get_names(caudales,metadata_cuenca[['Estacion','rut']])
+plt.close('all')
+
+# crear archivo para guardar estaciones
+save_path=ruta_op.joinpath('CVE_2006-2021_caudales_Limari-DT02.xlsx')
+writer=pd.ExcelWriter(save_path, engine='xlsxwriter')
+cuenca = 'Limari'
+
+for i in range(len(caudales_nam.columns)):
+    q_nam = pd.DataFrame(caudales_nam.loc[(caudales_nam.index>='2006-04-01') & (caudales_nam.index<'2022-03-31')][caudales_nam.columns[i]])
     fig, axes=plt.subplots(2,1,figsize=(11, 17))
     axes=axes.reshape(-1)
     modules_CCC.CVE_mon(q_nam,fig,axes,2,q_nam.index.year[0],q_nam.index.year[-1],cuenca,writer)
