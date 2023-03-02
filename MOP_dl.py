@@ -5,13 +5,13 @@ Created on Tue Nov  3 10:25:23 2020
 """
 
 import requests #librería para hacer consultas https
-from time import sleep
-import random
 from bs4 import BeautifulSoup
 import pandas as pd
 import datetime
 import os
 import sys
+from time import sleep
+import random
 #%% funciones
 #Estos son los encabezados del método POST
 def headersParam(cookies):
@@ -199,12 +199,6 @@ def POSTdata(g_recaptcha_response,fechaInicio,fechaFin,parametros,date,stations)
         
     return data
 
-def parse_params(texto):
-    df=pd.read_html(texto)
-    max_df=[len(x) for x in df]
-    df_yrs=df[max_df.index(max_df)]
-    return df_yrs
-
 def parse_tables(texto):
 
     df_yrs=pd.DataFrame([],index=[datetime.date.today()])
@@ -219,52 +213,6 @@ def parse_tables(texto):
         
     return df_yrs
 
-def parse_rut(sopa):
-    # parsear todas las estaciones
-    estaciones_all=[element.get_text() for element in sopa.find_all('option')]
-    estaciones=estaciones_all[:estaciones_all.index(' - Seleccione Estación 2 - ')]
-    
-    # ruts
-    rut_estacion=[x.split(' ')[0] for x in estaciones]
-    
-    return rut_estacion
-
-def ordenarDGA(ests,df_DGA,lastYear):
-    """
-    
-
-    Parameters
-    ----------
-    df : list
-        estaciones a ordenar.
-    df_DGA : Pandas DataFrame
-        dataframe de los datos del BNA.
-
-    Returns
-    -------
-    output : TYPE
-        DESCRIPTION.
-
-    """
-    output=pd.DataFrame([],index=pd.date_range(start=str(lastYear)+'-01-01',
-                                               end='2020-12-31',inclusive='right'))
-    df_DGA.index = pd.to_datetime(df_DGA.index)
-    output_flag=pd.DataFrame([],index=pd.date_range(start=str(lastYear)+'-01-01', 
-end='2020-12-31',inclusive='right'))
-
-    for ind,est in enumerate(ests):
-        q_est=df_DGA[df_DGA['rut'] == ests[ind]]
-        fechas=q_est.index
-        caudal=q_est['Q (m3/s)']
-        flags=q_est['flag']
-        
-        q_est_df=pd.DataFrame(caudal.values,index=fechas,columns=[est])
-            
-        output.loc[q_est_df.index,est]=q_est_df[est].values
-        output_flag.loc[flags.index,est]=flags.values
-
-    return output,output_flag  
-
 def date_rut(rut,df_,lastYear):
     date_first=df_[df_['rut']==rut].index
     if len(date_first)>=1:
@@ -275,6 +223,20 @@ def date_rut(rut,df_,lastYear):
     
 def checkFile(path):
     return os.path.isfile(path)
+
+def getStations(sp):
+    stations=[element.get_text() for element in sp.find_all('option')]
+    listStations=sorted(list(set([x.split(' ')[0] for x in stations])))
+    listStations=[x for x in listStations if len(x)>2]
+    return listStations
+
+def openFile(path):
+    try:
+        df=pd.read_csv(path,index_col=0)
+        return df
+    except:
+        sys.exit('Se necesita archivo para descargar')    
+        return None
 #%%
 def main(cookies,g_recaptcha):
     
@@ -291,43 +253,57 @@ def main(cookies,g_recaptcha):
     
     # crear diccionario con las fechas de inicio
     path_metadata=os.path.join('.','inputs','datesRuts.csv')
-    if checkFile(path_metadata):
-        df=pd.read_csv(path_metadata,index_col=0)
-    else:
-        sys.exit('Se necesita archivo de fechas para descargar')
-    
-    # ruts
+    df=openFile(path_metadata)
+
+    # ruts blacklist
     path_ruts=os.path.join('.','inputs','rut_estaciones.csv')
-    if checkFile(path_ruts):
-        ruts=pd.read_csv(path_ruts,names=['Rut'])
-    else:
-        sys.exit('Se necesita archivo de estaciones para descargar')
+    rutsBlacklist=openFile(path_ruts)
     
     # leer fecha inicial
     path_last_yr=os.path.join('.','outputs','lastYearMOP.csv')
-    if checkFile(path_last_yr):
+    try:
         lastYear=int(pd.read_csv(path_last_yr).columns[0])
-    else:
+    except:
         lastYear=1972
     date_user=pd.to_datetime('01-01-'+str(lastYear),
                                  format='%d-%m-%Y')    
+     
+    # get ruts
+    firstRut='01000005-K'
+    # get first date
+    try:
+        date_ini=max(date_rut(firstRut,df,lastYear),date_user)
+    except:
+        date_ini=date_user
+    # headers
+    headerParams=headersParam(cookies)
+
+    # POST data
+    data_param=paramsPOSTdata([firstRut],today.strftime("%d/%m/%Y"))
+    
+    response=requests.post(URLParam,headers=headerParams,data=data_param,
+stream=True)
+    
+    # obtener los ruts nuevos y filtrar los que no tienen caudal
+    ruts=getStations(BeautifulSoup(response.text))[1:]
+    ruts=[x for x in ruts if x not in list(rutsBlacklist['rut'])]
+    
     # df para guardar los datos q medio, minimo y maximo 
     df_qmean=pd.DataFrame(index=pd.date_range('01-01-'+str(lastYear),today,
-                                              freq='1d'))
+                                              freq='1d'),columns=ruts)
 
-    df_qmin=pd.DataFrame(index=pd.date_range('01-01-'+str(lastYear),today,
-                                             freq='1d'))
+    df_qmin=df_qmean.copy()
     
-    df_qmax=pd.DataFrame(index=pd.date_range('01-01-'+str(lastYear),today,
-                                             freq='1d'))
-        
+    df_qmax=df_qmin.copy()
+    
     # iterar en las estaciones
-    for rut in ruts['Rut']:
+    for rut in ruts:
+        print(rut)
         
         # get first date
-        if df['rut'].str.contains(rut).any():
+        try:
             date_ini=max(date_rut(rut,df,lastYear),date_user)
-        else:
+        except:
             date_ini=date_user
         # headers
         headerParams=headersParam(cookies)
@@ -341,44 +317,56 @@ def main(cookies,g_recaptcha):
         # chequear errores del servidor
         while any(x in response.text for x in ['Error 500',
                 'Se ha producido un error en el Sistema','502 Bad Gateway']):
-            sleep(random.randint(21,60)) #NO CAMBIAR
+            sleep(random.randint(1,3)) #NO CAMBIAR
             response=requests.post(URLParam,headers=headerParams,
                                    data=data_param,stream=True)
-            
+                                
         soup=BeautifulSoup(response.text, "html.parser")
+        
         parametros=[element['value'].replace(' ','+') for element in soup.find_all('input')
 if (any(str(x) in element['value'] for x in [rut]))]
         param_q=[x for x in parametros if 'Caudal+(m3/seg)' in x]
         
-        # iterar en los años
-        for yr in range(date_ini.year,int(datetime.date.today().year)+1):
-                
-            date_fin=min(date_ini+pd.offsets.DateOffset(years=1),pd.to_datetime(today))
+        if len(param_q)>0:
+            # iterar en los años
+            for yr in range(date_ini.year,int(datetime.date.today().year)+1):
                     
-            # POST request
-            sleep(random.randint(1,3)) #NO CAMBIAR
-            # PostDATA
-            data=POSTdata(g_recaptcha,pd.to_datetime(date_ini).strftime("%d/%m/%Y"),
-                          date_fin.strftime("%d/%m/%Y"),param_q,today,[rut])
-            
-            # headers POST
-            headers=get_headers(cookies=cookies)
-            session.headers.update(headers)
-            r=session.post(URL,headers=headers, data=data, stream = True)
-            
-            # GET request
-            headers2=headersGET(cookies)
-            r=requests.get(URL2,headers=headers2)
-            
-            # parsear tablas con pandas
-            df_yrs=parse_tables(r.text)
-            
-            if len(df_yrs.columns)>1:
-                df_qmin.loc[df_yrs.index,rut]=df_yrs.iloc[:,1].values
-                df_qmax.loc[df_yrs.index,rut]=df_yrs.iloc[:,2].values
-                df_qmean.loc[df_yrs.index,rut]=df_yrs.iloc[:,3].values
-            
-            date_ini=date_fin
+                date_fin=min(date_ini+pd.offsets.DateOffset(years=1),
+                             pd.to_datetime(today))
+                        
+                # POST request
+                data=POSTdata(g_recaptcha,pd.to_datetime(date_ini).strftime("%d/%m/%Y"),
+                              date_fin.strftime("%d/%m/%Y"),param_q,today,[rut])
+                
+                # headers POST
+                headers=get_headers(cookies=cookies)
+                session.headers.update(headers)
+                
+                r=session.post(URL,headers=headers, data=data, stream = True)
+                while any(x in response.text for x in ['Error 500',
+                        'Se ha producido un error en el Sistema','502 Bad Gateway']):
+                    sleep(random.randint(1,3)) #NO CAMBIAR
+                    r=session.post(URL,headers=headers, data=data, stream = True)
+                
+                # GET request
+                headers2=headersGET(cookies)
+                
+                r=requests.get(URL2,headers=headers2)
+                
+                while any(x in response.text for x in ['Error 500',
+                        'Se ha producido un error en el Sistema','502 Bad Gateway']):
+                    sleep(random.randint(1,3)) #NO CAMBIAR
+                    r=requests.get(URL2,headers=headers2)
+                
+                # parsear tablas con pandas
+                df_yrs=parse_tables(r.text)
+                
+                if len(df_yrs.columns)>1:
+                    df_qmin.loc[df_yrs.index,rut]=df_yrs.iloc[:,1].values
+                    df_qmax.loc[df_yrs.index,rut]=df_yrs.iloc[:,2].values
+                    df_qmean.loc[df_yrs.index,rut]=df_yrs.iloc[:,3].values
+                
+                date_ini=date_fin
     
     # salidas
     folder=os.path.join('.','outputs')
@@ -386,12 +374,20 @@ if (any(str(x) in element['value'] for x in [rut]))]
         os.makedirs(folder)
     except:
         pass
+    
+    df_qmean=dropnans(df_qmean)
+    df_qmax=dropnans(df_qmax)
+    df_qmin=dropnans(df_qmin)
+    
     df_qmean.to_csv(os.path.join(folder,'qmean_MOP.csv'))
     df_qmax.to_csv(os.path.join(folder,'qmax_MOP.csv'))
     df_qmin.to_csv(os.path.join(folder,'qmin_MOP.csv'))
     
     parse_MOP(df,df_qmean,lastYear)
-    
+
+def dropnans(df):
+    return df.dropna(how='all',axis=1)    
+
 def parse_MOP(df_,df_qmean_,lastYear):
     # obtener estaciones totales
     stations=list(df_['rut'].unique())+list(df_qmean_.columns)
@@ -400,11 +396,7 @@ def parse_MOP(df_,df_qmean_,lastYear):
     # crear df para guardar
     df_q=pd.DataFrame(index=pd.date_range(str(lastYear)+'-01-01',
 datetime.date.today(),freq='1d'),columns=stations_dr)
-    
-    # parsear los caudales originales de la DGA de los ultimos 50 años
-    # df_q50=df_.loc[df_.index>='1972-01-01']
-    # df_parsed,flags_parsed=ordenarDGA(stations_dr,df_q50)
-    
+        
     for est in df_qmean_.columns:
         qmean_est=df_qmean_[est].copy()
         
@@ -413,15 +405,6 @@ datetime.date.today(),freq='1d'),columns=stations_dr)
         
         # guardar los valores nuevos not nan
         df_q.loc[qmean_est_nna.index,qmean_est_nna.name]=qmean_est_nna.values        
-   
-    # for est in df_parsed.columns:
-    #     qmean_est=df_parsed[est]
-        
-    #     # remover los nan
-    #     qmean_est_nna=qmean_est[qmean_est.notna()]
-        
-    #     # guardar los valores nuevos not nan
-    #     df_q.loc[qmean_est_nna.index,qmean_est_nna.name]=qmean_est_nna.values   
    
     # guardar los caudales del MOP
     df_q.dropna(how='all',axis=1).dropna(how='all',axis=0).to_csv(os.path.join('.',
