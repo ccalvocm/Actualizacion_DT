@@ -68,7 +68,7 @@ def headersParam(cookies):
 				: "1"
 ,
 				"User-Agent"
-				: "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:102.0) Gecko/20100101 Firefox/102.0"
+				: "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36"
 }
     return headers
 
@@ -100,7 +100,7 @@ def paramsPOSTdata(estaciones,date):
 def get_headers(cookies):
     headers = {
 'Host': 'snia.mop.gob.cl',
-'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:102.0) Gecko/20100101 Firefox/102.0',
+'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36',
 'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
 'Accept-Language': 'en-US,en;q=0.5',
 'Accept-Encoding': 'gzip, deflate, br',
@@ -168,7 +168,7 @@ def headersGET(cookies):
 				: "1"
 ,
 				"User-Agent"
-				: "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:102.0) Gecko/20100101 Firefox/102.0"
+				: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36'
 }
     return headers
 
@@ -278,6 +278,8 @@ def checkFile(path):
 #%%
 def main(cookies,g_recaptcha):
     
+    cookies='__uzma=3f5bb002-58ef-4822-97bc-e1701a390727; __uzmb=1731693866; __uzme=5422; __ssds=3; __ssuzjsr3=a9be0cd8e; __uzmaj3=c885041e-ead3-4b02-80ba-bb96493cff81; __uzmbj3=1731693914; _ga=GA1.1.950226115.1731773240; JSESSIONID=0000HYiEUsRPU5MuK6ittdgnaY1:-1; _ga_Y8S34E0V2R=GS1.1.1731787861.2.0.1731787871.50.0.1047810154; __uzmc=903349423712; __uzmd=1731787895; __uzmcj3=914246411504; __uzmdj3=1731787898'
+    g_recaptcha='03AFcWeA5Xw1rWuGqWRlgYGnWmI3PIwlFn8cBMl0-G6nA454uPXiA69ejvMrkQ3NIn97uy4sdqKipfPiRpQ6xNkWs3lN69IUUTFyZTZ-_vULyxpKVAUlgxY33wjG1z-NuBiCQ-tBsHKpYXtoWZbbDzBumJqzr1CUnHsllDzbBmuYmawjScyU106uzGsB7n2ZmhnUGKE-W7ayWr3C1wQE0y55atAboONXZMVCuFfdzucIqXr4Es_tl-gT-go8nX89KcFcqkRGU9uQGnAbH6qikJqeKxZRghC4gp_nN0cYuiGBMvnyRi4OBs1c-9Wj0MsV-cRmqFQ3xAnukSkkwOCBMl2MMwAPobcrwrE_1EZBU9ezwr0NPWTjBJ-AN9kthmhiIhLoeS1irEvVtGzxAZrOYUthjirrO3vLbJqajoo4JiWTExU4YUz42bFxQpTKq3C6olm59ADenX7kkwbj6lW0JtIExMuaQwDYUbD5wlbRI7Pb5s10hsI82pE5gPEZoGIjbFde7KPXBw-vNra-HNRz_t__YwLSm3in2MCGyhhAhj-vO_zQte9gczIjpKlCT9AgbfTzwb6fbV1zMK-BzOst3DxGq1JYUTj25Ka9Zdb__tJWJPtSlk4StoiIGuGGme1Tmw145h0QfFrwFpxC0lYigxmOrQhKANRD73sssTVt5DqPqyL9Fg6_IAjl6Jb8BHC3WVQKWkcsyaDu0rZQzbDC3v0sCQ2p7TG_w1Rq1-4B3xAlSmy30izlLgmOhVU72OcRvny5MXep7x5LCfo0LC-ZCGE6zTikHlCosHAOymsaNnjvdt_Lh0ZPx9pjXZ_-2OCmSWvnVkfhqQsFhSsnpvHSEsECNOn3qu7R2pngSYCjXp7MSEBAdxZCatL6c3nOl6qQ3WmuMCOkSKjkQLWedgAww9XJrU6RUCG0ADpE7ZAp5_2DkYM7CRhrJwKQgc30FoqtP4pkzX4FHzFI0adP327Lnn3VkWtPgGkcVIm5lfzxJE1zjxPxKd44m8faB_MQrnZr_d9-GPepO6ZiwetPfMrjpd38PXUcuoG-DDxjlY1cj3E6l5qJ8lmFMoAdcVit60GE6mBPiu_dRa98wC95ZDUqpe_RKpKSbmbI4jT4SoV5klBk-MzVbJVz5UwdS6yODxT9ZEhtAArpfwsTovsyuhQqHGZxEkQ-F_mc6Eb_grGaRzRxciI7JC6nJ5Fa6I53dT4FXk2eiNQN-V9SlaGDZzMA8M8t2PqbqkuoKy_WNyZ0oiE0Q1dGmwNIfZE6Lo8ReclEuTrdgwrPpI7wJfrB6CWlgz7xp59QkMMZV2Yb5wtUAVAURkb8YsAIb3drCZYzfJrAexN7Gcl0X6NFlavono47InTJKY06P0rnKT0yGC41iBpBXkmbEcX6ucYMN4GyzaIL2WHM_uUCLOAnfg1gTa5XWZ05rBB_CAqYaTpVhPNR4V9UDb9LMsYdsLFw4vJpY_t368zqlfs_cw7ERB7OxygmftmJUIAJJ8WwyTQMnQ3h1WkvjvtEQfVvLEfjZ0m6B5wa-pVQX58UqiR_781Dez-XzMz2XQTBSAgPZkYxUx-XaiWO300xFcWzitahOO-4wZtOUcPuNe8fTXUynz622AyWserKnABVFM7IJptkCAdAXKWgFbz0tI2T9tM103hSun-2kEEIQZkC1QVeu5lgaTRGLSw0woHdZl0prJvpZ8twdqR3dBqb_THWbUZdqO54XB3ivrQNEx3_8JAoPsXV_ZgSNcp52PiEt9ncUySNVa91S_sdXpnKcJypWC9wNwLVOmCqxglIjM0r1xFiQ09DO-Mr2Suo50leFJlI3YsMnJ0aPdO_eGpFBFRGCyv1GVwvYT7xQqMQ-uJ0kEN1Bdd-pw7LgN-npsUwYbdrXToOGMKEAjsp6Asxe44j5KeOHWb675tTMuw51va5ssCqMdoIyCLgHa4kK7XSSBJ5njkQ'
     #% invariantes
     today=datetime.date.today()
     
@@ -299,7 +301,7 @@ def main(cookies,g_recaptcha):
     # ruts
     path_ruts=os.path.join('.','inputs','rut_estaciones.csv')
     if checkFile(path_ruts):
-        ruts=pd.read_csv(path_ruts,names=['Rut'])
+        ruts=pd.read_csv(path_ruts)
     else:
         sys.exit('Se necesita archivo de estaciones para descargar')
     
@@ -340,7 +342,9 @@ def main(cookies,g_recaptcha):
         
         # chequear errores del servidor
         while any(x in response.text for x in ['Error 500',
-                'Se ha producido un error en el Sistema','502 Bad Gateway']):
+                'Se ha producido un error en el Sistema','502 Bad Gateway',
+                '403 Forbidden','permission to access this resource.']):
+            print('Error en el servidor, esperando 1 minuto')
             sleep(random.randint(21,60)) #NO CAMBIAR
             response=requests.post(URLParam,headers=headerParams,
                                    data=data_param,stream=True)
@@ -356,15 +360,16 @@ if (any(str(x) in element['value'] for x in [rut]))]
             date_fin=min(date_ini+pd.offsets.DateOffset(years=1),pd.to_datetime(today))
                     
             # POST request
-            sleep(random.randint(1,3)) #NO CAMBIAR
+            sleep(random.randint(1,1)) #NO CAMBIAR
             # PostDATA
             data=POSTdata(g_recaptcha,pd.to_datetime(date_ini).strftime("%d/%m/%Y"),
-                          date_fin.strftime("%d/%m/%Y"),param_q,today,[rut])
+                          date_fin.strftime("%d/%m/%Y"),param_q[0],
+                          today.strftime("%d/%m/%Y"),[rut])
             
             # headers POST
             headers=get_headers(cookies=cookies)
             session.headers.update(headers)
-            r=session.post(URL,headers=headers, data=data, stream = True)
+            r=session.post(URL,headers=headers, data=data, stream = True)    
             
             # GET request
             headers2=headersGET(cookies)
