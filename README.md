@@ -6,6 +6,8 @@
 
 Descargar el archivo https://github.com/ccalvocm/Actualizacion_DT/blob/main/DGAMOPdownloader.zip?raw=true
 
+### NOTA: Al 2024/11/16 el sitio web DGA no está disponible, pero sí el MOP.
+
 #### Descarga de registros fluviométricos de la DGA:
 - Descomprimir el archivo .zip en su computador
 - Modificar el archivo de la carpeta "outputs/lastYearDGA.csv" e ingresar el año desde el cual se requiere bajar información.
